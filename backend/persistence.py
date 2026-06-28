@@ -6,12 +6,33 @@ end-to-end locally. Tables match backend/db/schema.sql.
 from __future__ import annotations
 
 import logging
+import threading
+import time
 import uuid
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from .config import settings
 
 logger = logging.getLogger(__name__)
+
+# The supabase client is httpx-based and shared across the event-loop thread (job status
+# updates) and the run_in_executor worker thread (pipeline logging). Serialize all access
+# and retry transient transport errors so best-effort logging is actually reliable on the
+# (slower) deployed box, where unsynchronized/stale connections intermittently dropped writes.
+_SB_LOCK = threading.Lock()
+_SB_RETRIES = 3
+
+
+def _sb_call(fn: Callable[[], Any]) -> Any:
+    last: Exception | None = None
+    with _SB_LOCK:
+        for i in range(_SB_RETRIES):
+            try:
+                return fn()
+            except Exception as e:  # noqa: BLE001  (transient transport/connection errors)
+                last = e
+                time.sleep(0.3 * (i + 1))
+    raise last  # type: ignore[misc]
 
 
 # ---------------------------------------------------------------------------
@@ -48,8 +69,8 @@ class ObjectStore:
         # 2) Supabase Storage (via the service_role client; bucket must be public)
         if self._sb is not None:
             try:
-                self._sb.storage.from_(self._bucket).upload(
-                    key, data, {"content-type": content_type, "upsert": "true"})
+                _sb_call(lambda: self._sb.storage.from_(self._bucket).upload(
+                    key, data, {"content-type": content_type, "upsert": "true"}))
                 url = self._sb.storage.from_(self._bucket).get_public_url(key)
                 return url if isinstance(url, str) else key
             except Exception as e:  # noqa: BLE001
@@ -80,7 +101,7 @@ class SupabaseLogger:
         if self._client is None or not rows:
             return
         try:
-            self._client.table(table).insert(rows).execute()
+            _sb_call(lambda: self._client.table(table).insert(rows).execute())
         except Exception as e:  # noqa: BLE001
             logger.warning("supabase insert into %s failed: %s", table, e)
 
@@ -89,7 +110,7 @@ class SupabaseLogger:
         if self._client is None:
             return
         try:
-            self._client.table("jobs").upsert(row).execute()
+            _sb_call(lambda: self._client.table("jobs").upsert(row).execute())
         except Exception as e:  # noqa: BLE001
             logger.warning("supabase upsert job failed: %s", e)
 
@@ -110,7 +131,7 @@ class SupabaseLogger:
         if self._client is None:
             return []
         try:
-            return build(self._client.table(table).select("*")).execute().data or []
+            return _sb_call(lambda: build(self._client.table(table).select("*")).execute().data) or []
         except Exception as e:  # noqa: BLE001
             logger.warning("supabase select from %s failed: %s", table, e)
             return []
@@ -133,16 +154,16 @@ class SupabaseLogger:
         if self._client is None:
             return False
         try:
-            row = self._client.table("review_queue").select("*").eq("id", review_id).execute().data
+            row = _sb_call(lambda: self._client.table("review_queue").select("*").eq("id", review_id).execute().data)
             if not row:
                 return False
             r = row[0]
-            self._client.table("human_labels").insert({
+            _sb_call(lambda: self._client.table("human_labels").insert({
                 "review_queue_id": review_id, "image_id": r.get("image_id"),
                 "segment_id": r.get("segment_id"), "confirmed_label": label,
                 "labeled_by": labeled_by,
-            }).execute()
-            self._client.table("review_queue").update({"status": "confirmed"}).eq("id", review_id).execute()
+            }).execute())
+            _sb_call(lambda: self._client.table("review_queue").update({"status": "confirmed"}).eq("id", review_id).execute())
             return True
         except Exception as e:  # noqa: BLE001
             logger.warning("confirm_label failed: %s", e)

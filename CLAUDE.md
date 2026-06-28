@@ -276,11 +276,16 @@ reefscan/
       bucket `reefscan-uploads` (public) — upload+public-read verified; no Cloudflare needed.
       **HF Space:** `HrishiKabra/reefscan-api` (Docker) created + pushed + secrets set
       (`SUPABASE_URL`/`SUPABASE_KEY`/`HF_MODEL_STAGE=finetune`); serves the **fine-tune**
-      model (test acc 0.895 / F1 0.887). **Remaining (user action):** deploy `frontend/` to
-      Vercel with `NEXT_PUBLIC_REEFSCAN_API=https://hrishikabra-reefscan-api.hf.space`.
-      NOTE: `schema.sql`
-      had a table-order bug (jobs before reef_locations) — FIXED. `seed_demo.sql` had a
-      lateral-`random()` hoisting bug (all rows identical) — FIXED via MATERIALIZED CTE.
+      model (test acc 0.895 / F1 0.887). **LIVE + verified end-to-end** (real image → 18
+      SAM2 segments → DINOv2 fine-tune → conformal → stored in Supabase Storage → logged).
+      **GitHub:** github.com/HrishiKabra/reefscan (public). **Remaining (user action):**
+      deploy `frontend/` to Vercel with
+      `NEXT_PUBLIC_REEFSCAN_API=https://hrishikabra-reefscan-api.hf.space`.
+      NOTE: `schema.sql` had a table-order bug (jobs before reef_locations) — FIXED.
+      `seed_demo.sql` had a lateral-`random()` hoisting bug — FIXED via MATERIALIZED CTE.
+      Supabase writes (httpx client shared across event-loop + executor threads) intermittently
+      dropped `review_queue`/job-complete writes on the deployed box — FIXED with a
+      serialize-lock + 3× retry (`persistence._sb_call`) + persist `result_json`/`completed_at`.
 - [x] **Phase 6** — DONE (against mock). Next.js 14 + TS + Tailwind: analyze+overlay,
       admin review queue, temporal tracker. Builds clean, all 3 pages render-verified.
       **Phase 5 swap point = `frontend/lib/api.ts`** (replace mock returns with fetch()).

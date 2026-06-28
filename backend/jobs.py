@@ -33,9 +33,15 @@ class JobStore:
     def update(self, job_id: str, **kw: Any) -> None:
         if job_id in self._jobs:
             self._jobs[job_id].update(kw)
-            row = {"job_id": job_id, "status": self._jobs[job_id]["status"]}
+            status = self._jobs[job_id]["status"]
+            row: dict[str, Any] = {"job_id": job_id, "status": status}
             if kw.get("error"):
                 row["error_message"] = kw["error"]
+            if kw.get("result"):
+                row["result_json"] = kw["result"]
+            if status in ("complete", "failed"):
+                from datetime import datetime, timezone
+                row["completed_at"] = datetime.now(timezone.utc).isoformat()
             supabase.upsert_job(row)
 
     def response(self, job_id: str) -> Optional[InferenceResponse]:
