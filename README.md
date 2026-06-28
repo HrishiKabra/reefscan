@@ -6,7 +6,7 @@ Upload an underwater photo. ReefScan segments individual coral colonies, classif
 
 | | |
 |---|---|
-| 🔴 **Live demo** | `<!-- replace with your Vercel URL, e.g. https://reefscan.vercel.app -->` |
+| 🔴 **Live demo** | **https://reefscan.vercel.app** |
 | ⚙️ **Inference API** | https://hrishikabra-reefscan-api.hf.space ([`/health`](https://hrishikabra-reefscan-api.hf.space/health)) |
 | 🤗 **Model + calibration** | [HrishiKabra/reefscan-dinov2-coral](https://huggingface.co/HrishiKabra/reefscan-dinov2-coral) |
 | 📊 **Dataset** | [NOAA-PIFSC-ESD Coral Bleaching](https://huggingface.co/datasets/NMFS-OSI/NOAA-PIFSC-ESD-CORAL-Bleaching-Dataset) |
