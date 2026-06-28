@@ -63,7 +63,7 @@ async def _read_input(file: Optional[UploadFile], url: Optional[str]) -> tuple[b
     if url:
         try:
             import httpx
-            async with httpx.AsyncClient(timeout=30) as client:
+            async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
                 r = await client.get(url)
                 r.raise_for_status()
             ct = r.headers.get("content-type", "")

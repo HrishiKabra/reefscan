@@ -13,6 +13,7 @@ const LINKS = [
 export function Nav() {
   const path = usePathname();
   const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+  const live = !!process.env.NEXT_PUBLIC_REEFSCAN_API;
 
   return (
     <header className="mx-auto flex w-full max-w-[1240px] flex-wrap items-center justify-between gap-4 px-4 py-5 md:px-8">
@@ -52,10 +53,11 @@ export function Nav() {
       </nav>
 
       <div className="flex items-center gap-2.5">
-        <span className="hidden items-center gap-1.5 sm:inline-flex readout">
+        <span className="hidden items-center gap-1.5 sm:inline-flex readout" title={live ? "Connected to the live inference API" : "Using built-in mock data"}>
           <span className="live-dot inline-block h-[7px] w-[7px] rounded-full"
-                style={{ background: "var(--bleached)", boxShadow: "0 0 0 4px var(--bleached-soft)" }} />
-          Mock data
+                style={{ background: live ? "var(--healthy)" : "var(--bleached)",
+                         boxShadow: `0 0 0 4px ${live ? "var(--healthy-soft)" : "var(--bleached-soft)"}` }} />
+          {live ? "Live API" : "Mock data"}
         </span>
         <ThemeToggle />
       </div>

@@ -11,6 +11,8 @@ Upload an underwater photo. ReefScan segments individual coral colonies, classif
 | 🤗 **Model + calibration** | [HrishiKabra/reefscan-dinov2-coral](https://huggingface.co/HrishiKabra/reefscan-dinov2-coral) |
 | 📊 **Dataset** | [NOAA-PIFSC-ESD Coral Bleaching](https://huggingface.co/datasets/NMFS-OSI/NOAA-PIFSC-ESD-CORAL-Bleaching-Dataset) |
 
+**Try it:** on the [live demo](https://reefscan.vercel.app), hit **Run sample** for real inference on a reef photo, or drag in a test image from [`docs/sample-images/`](docs/sample-images) (a healthy reef + a real bleaching scene). The first run is slow (~45 s) — SAM2 on free CPU.
+
 > ⚠️ **Demo note:** the Supabase free tier auto-pauses after ~1 week of inactivity and the Hugging Face Space cold-starts (it downloads ~0.7 GB of weights on first hit). A slow first load is expected, not a bug. Because SAM2 runs on a free 2-vCPU CPU, a single image takes ~45 s — which is exactly why inference is an **async job**, surfaced in the UI as a live "pipeline running" state.
 
 ---

@@ -8,6 +8,9 @@ import { ClassTag, SectionLabel, classColor, pct } from "@/components/ui";
 
 type View = "idle" | "loading" | "done";
 const STAGES = ["WaterNet enhance", "Scene frames", "SAM2 segment", "DINOv2 classify", "Conformal sets"];
+// A real reef photo so "Run sample" runs genuine inference on the live backend (the backend
+// fetches the URL); in mock mode the input is ignored and the canned response is returned.
+const SAMPLE_URL = "https://commons.wikimedia.org/wiki/Special:FilePath/Coral%20Outcrop%20Flynn%20Reef.jpg";
 
 export default function AnalyzePage() {
   const [view, setView] = useState<View>("idle");
@@ -61,7 +64,7 @@ export default function AnalyzePage() {
                 Choose file
               </button>
               <button
-                onClick={() => run("__sample__")}
+                onClick={() => run(SAMPLE_URL)}
                 className="rounded-full border px-5 py-2.5 font-mono text-[13px] uppercase tracking-wider text-ink transition-colors hover:text-cyan"
                 style={{ borderColor: "var(--line)" }}
               >
