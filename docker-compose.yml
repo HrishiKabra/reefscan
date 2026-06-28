@@ -1,0 +1,25 @@
+# One-command local stack:  docker compose up --build
+# Defaults to STUB inference (no weights, fast). For the real models, remove REEFSCAN_STUB
+# and (optionally) add SUPABASE_URL / SUPABASE_KEY to populate logging + dashboards.
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    ports:
+      - "7860:7860"
+    environment:
+      REEFSCAN_STUB: "1"            # remove to load real SAM2 + DINOv2 from the HF Hub
+      HF_MODEL_STAGE: "finetune"
+      # SUPABASE_URL: "https://<ref>.supabase.co"
+      # SUPABASE_KEY: "<service_role key>"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_REEFSCAN_API: "http://localhost:7860"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
