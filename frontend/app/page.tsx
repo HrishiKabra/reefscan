@@ -28,6 +28,17 @@ export default function AnalyzePage() {
     setView("done");
   }, []);
 
+  // "Run sample" — upload a bundled reef photo as a file so live inference is genuine
+  // (no fragile external fetch); falls back to the URL path if the bundled fetch fails.
+  const runSample = useCallback(async () => {
+    try {
+      const blob = await (await fetch("/sample-reef.jpg")).blob();
+      run(new File([blob], "sample-reef.jpg", { type: "image/jpeg" }));
+    } catch {
+      run(SAMPLE_URL);
+    }
+  }, [run]);
+
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDrag(false);
@@ -64,7 +75,7 @@ export default function AnalyzePage() {
                 Choose file
               </button>
               <button
-                onClick={() => run(SAMPLE_URL)}
+                onClick={runSample}
                 className="rounded-full border px-5 py-2.5 font-mono text-[13px] uppercase tracking-wider text-ink transition-colors hover:text-cyan"
                 style={{ borderColor: "var(--line)" }}
               >

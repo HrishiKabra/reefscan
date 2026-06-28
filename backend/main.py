@@ -63,7 +63,9 @@ async def _read_input(file: Optional[UploadFile], url: Optional[str]) -> tuple[b
     if url:
         try:
             import httpx
-            async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
+            # many image hosts (e.g. Wikimedia) 403 a request without a descriptive UA
+            ua = {"User-Agent": "ReefScan/1.0 (+https://github.com/HrishiKabra/reefscan)"}
+            async with httpx.AsyncClient(timeout=30, follow_redirects=True, headers=ua) as client:
                 r = await client.get(url)
                 r.raise_for_status()
             ct = r.headers.get("content-type", "")
