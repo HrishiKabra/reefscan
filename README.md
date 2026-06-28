@@ -64,6 +64,54 @@ The deployed Space serves the fine-tune model.
 
 ---
 
+## Evaluation & benchmarks
+
+Full harness in [`backend/eval.py`](backend/eval.py) (classifier + calibration + conformal),
+[`backend/vlm_benchmark.py`](backend/vlm_benchmark.py) (vs. GPT-4o), and
+[`backend/bench.py`](backend/bench.py) (latency profile). All numbers below are on the
+held-out **test split (1,565 images)**.
+
+### Specialist vs. a frontier VLM — *does an 86M-param specialist beat GPT-4o?*
+Zero-shot GPT-4o (vision, forced binary choice + logprobs) on the **same** test set:
+
+| model | accuracy | macro-F1 | ECE (calibration) |
+|---|---:|---:|---:|
+| GPT-4o (zero-shot) | 0.805 | 0.790 | 0.152 |
+| **ReefScan specialist** (DINOv2-B, 86M) | **0.895** | **0.887** | **0.046** |
+
+**Yes — by ~9 points accuracy, ~10 points macro-F1, and ~3× better calibrated.** GPT-4o
+over-predicts "healthy" (bleached recall 0.71 vs the specialist's 0.84). The whole run cost
+~$0.68. Takeaway: for a narrow, well-defined visual task with labeled data, a small fine-tuned
+specialist still decisively beats a frontier generalist — and is far cheaper and more confident
+to serve.
+
+### Classification & calibration
+Confusion matrix · reliability diagram (ECE = **0.046**, i.e. well-calibrated) · conformal coverage:
+
+<p>
+  <img src="docs/eval/confusion_matrix.png" width="32%" />
+  <img src="docs/eval/reliability_diagram.png" width="32%" />
+  <img src="docs/eval/conformal_coverage.png" width="33%" />
+</p>
+
+### Conformal: LAC vs APS, and a real calibration subtlety
+| method | marginal coverage | avg. set size | healthy cov. | bleached cov. |
+|---|---:|---:|---:|---:|
+| **LAC** (shipped) | 0.923 | **1.075** | 0.952 | **0.876** |
+| APS | 0.996 | 1.954 | 0.998 | 0.993 |
+
+LAC hits the 90% target with tight, useful sets; APS over-covers (99.6%) with near-maximal
+sets (1.95 ≈ "always both classes") — the wrong tool for binary. **The honest finding:** LAC's
+*marginal* 92% coverage masks **class-conditional under-coverage of the minority bleached class
+(87.6%)** — marginal conformal does not guarantee per-class coverage. Fix = Mondrian /
+class-conditional conformal (future work). This is a real limitation, surfaced by measuring it.
+
+### Inference profile — where the 45s goes
+Profiled per stage (CPU): **SAM2 AMG ≈ 16.7 s** vs **DINOv2 ≈ 112 ms/patch** → SAM2's image
+encoder is **~88–99% of wall-clock**. So the optimization target is the SAM2 encoder (ONNX +
+quantization), *not* the classifier. And a measured cautionary result: naive CPU dynamic-int8
+quantization of DINOv2 **regressed** latency 2.4× on ARM — optimizations get measured, not assumed.
+
 ## Design decisions (the interesting part)
 
 Every choice below was made deliberately and, where it mattered, **measured** before committing.

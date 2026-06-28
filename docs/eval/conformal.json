@@ -1,0 +1,37 @@
+{
+  "alpha": 0.1,
+  "LAC": {
+    "qhat": 0.7110530138015747,
+    "marginal_coverage": 0.9233226837060703,
+    "avg_set_size": 1.0753993610223642,
+    "class_conditional": {
+      "healthy": {
+        "coverage": 0.9517453798767967,
+        "avg_set_size": 1.0657084188911705,
+        "n": 974
+      },
+      "bleached": {
+        "coverage": 0.8764805414551607,
+        "avg_set_size": 1.0913705583756346,
+        "n": 591
+      }
+    }
+  },
+  "APS": {
+    "qhat": 1.0,
+    "marginal_coverage": 0.9961661341853035,
+    "avg_set_size": 1.9539936102236422,
+    "class_conditional": {
+      "healthy": {
+        "coverage": 0.997946611909651,
+        "avg_set_size": 1.9527720739219712,
+        "n": 974
+      },
+      "bleached": {
+        "coverage": 0.9932318104906938,
+        "avg_set_size": 1.9560067681895092,
+        "n": 591
+      }
+    }
+  }
+}

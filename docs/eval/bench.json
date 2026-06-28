@@ -1,0 +1,13 @@
+{
+  "classifier_dinov2": {
+    "fp32_ms_per_patch": 112.2,
+    "int8_dynamic_ms_per_patch": 272.8,
+    "int8_speedup": 0.41,
+    "note": "naive CPU dynamic int8 quantization REGRESSED latency 2.4x on ARM (qnnpack) -- measured, not assumed. DINOv2 is not the bottleneck, so this is not the optimization to ship."
+  },
+  "sam2_amg_ms": 16714,
+  "bottleneck": {
+    "finding": "SAM2's image encoder dominates wall-clock. On a real ~20-mask image: SAM2 ~16.7s vs DINOv2 ~2.2s (112ms x 20) => SAM2 ~88% of compute (~99% on a sparse image).",
+    "optimization_target": "the SAM2 image encoder (ONNX-export + quantize) -- documented future work; the profile here quantifies the expected payoff."
+  }
+}

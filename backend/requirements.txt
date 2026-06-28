@@ -46,3 +46,9 @@ boto3>=1.34                   # Cloudflare R2 (S3-compatible)
 
 # --- Tests ---
 pytest>=8.2
+
+# --- eval / benchmarks (backend/eval.py, vlm_benchmark.py, bench.py) ---
+matplotlib>=3.8               # confusion matrix / reliability / coverage plots
+pyarrow>=15                   # parquet dataset fast-load
+openai>=1.40                  # VLM-vs-specialist benchmark (GPT-4o)
+# python-dotenv already listed above

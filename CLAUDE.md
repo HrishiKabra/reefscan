@@ -296,6 +296,18 @@ reefscan/
 
 **Linear probe unblocks Phases 4–6** — do not wait on the 4-hr fine-tune to start them.
 
+- [x] **Phase 8** — portfolio hardening. Eval harness (`backend/eval.py`): finetune test
+      **acc 0.895 / macro-F1 0.887 / ECE 0.046**; conformal **LAC** (cov 0.923, set 1.075;
+      class-conditional reveals minority **bleached under-coverage 0.876** — marginal ≠
+      per-class) **vs APS** (cov 0.996, set 1.95 — over-covers). **VLM benchmark**
+      (`vlm_benchmark.py`): the specialist **beats zero-shot GPT-4o** (0.895/0.887/0.046 vs
+      0.805/0.790/0.152) on the full test set (~$0.68). **Profiling** (`bench.py`): SAM2 AMG
+      ~16.7s vs DINOv2 112ms/patch → SAM2 is ~88-99% of latency (the ONNX/quant target);
+      naive int8 quant of DINOv2 REGRESSED latency 2.4× on ARM (honest negative). Also:
+      CI (`.github/workflows/ci.yml`), `docker-compose.yml`, `retrain_trigger.py` (closes
+      active-learning loop, verified live), HF **model card** pushed, README "Evaluation &
+      benchmarks" section, `docs/eval/` artifacts (plots + json). TODO: demo GIF.
+
 ---
 
 ## Secrets / credentials (provided when their phase is reached; never hardcode)
