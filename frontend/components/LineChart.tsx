@@ -82,7 +82,7 @@ export function LineChart({ data }: { data: HealthSnapshot[] }) {
             <circle
               key={key + i}
               cx={x(i)} cy={y(d[key])} r={hover === i ? 4.5 : 2.6}
-              fill="var(--bg-abyss)"
+              fill="var(--surface)"
               stroke={classColor(key === "healthy_pct" ? "healthy" : "bleached")}
               strokeWidth={2}
               style={{ transition: "r 0.15s" }}

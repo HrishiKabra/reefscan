@@ -127,7 +127,7 @@ function Bar({ label, pct, color }: { label: string; pct: number; color: string 
   return (
     <div className="mb-1.5 flex items-center gap-2">
       <span className="readout w-9">{label}</span>
-      <div className="h-2.5 flex-1 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.05)" }}>
+      <div className="h-2.5 flex-1 overflow-hidden rounded-full" style={{ background: "var(--surface-inset)" }}>
         <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
       </div>
       <span className="w-12 text-right font-mono text-[11px] tnum" style={{ color }}>{pct.toFixed(1)}%</span>

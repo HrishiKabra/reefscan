@@ -53,7 +53,7 @@ export default function TrackerPage() {
               onClick={() => setReefId(l.id)}
               className="rounded-full px-4 py-2 font-mono text-[12.5px] transition-colors"
               style={{
-                color: on ? "#03141a" : "var(--ink-dim)",
+                color: on ? "#fff" : "var(--ink-dim)",
                 background: on ? "var(--cyan)" : "transparent",
                 border: `1px solid ${on ? "var(--cyan)" : "var(--line)"}`,
                 fontWeight: on ? 600 : 400,
@@ -91,7 +91,7 @@ export default function TrackerPage() {
           <SectionLabel>{reef ? reef.name : "—"} · area-weighted %</SectionLabel>
           <Legend />
         </div>
-        {snaps ? <LineChart data={snaps} /> : <div className="scan-sweep h-[260px] rounded-lg" style={{ background: "rgba(255,255,255,0.03)" }} />}
+        {snaps ? <LineChart data={snaps} /> : <div className="scan-sweep h-[260px] rounded-lg" style={{ background: "var(--surface-inset)" }} />}
         {reef && (
           <div className="mt-3 font-mono text-[11px] text-ink-faint tnum">
             {reef.lat.toFixed(2)}°, {reef.lng.toFixed(2)}° · {snaps?.length ?? 0} surveys

@@ -56,7 +56,7 @@ export default function AnalyzePage() {
               <button
                 onClick={() => fileRef.current?.click()}
                 className="rounded-full px-5 py-2.5 font-mono text-[13px] uppercase tracking-wider transition-transform hover:-translate-y-0.5"
-                style={{ background: "var(--cyan)", color: "#03141a", fontWeight: 600 }}
+                style={{ background: "var(--cyan)", color: "#fff", fontWeight: 600 }}
               >
                 Choose file
               </button>
@@ -193,7 +193,7 @@ function SummaryPanel({ data }: { data: InferenceResponse }) {
         <span className="mb-1 font-mono text-sm text-ink-dim">% healthy cover</span>
       </div>
 
-      <div className="mt-4 flex h-3 w-full overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.05)" }}>
+      <div className="mt-4 flex h-3 w-full overflow-hidden rounded-full" style={{ background: "var(--surface-inset)" }}>
         <div style={{ width: `${hp}%`, background: classColor("healthy") }} />
         <div style={{ width: `${s.area_weighted.bleached_pct}%`, background: classColor("bleached") }} />
       </div>
@@ -218,7 +218,7 @@ function Stat({
   label: string; value?: string | number; valueNode?: React.ReactNode; accent?: string;
 }) {
   return (
-    <div className="rounded-lg p-3" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid var(--line)" }}>
+    <div className="rounded-lg p-3" style={{ background: "var(--surface-inset)", border: "1px solid var(--line)" }}>
       <div className="readout mb-1.5">{label}</div>
       {valueNode ?? (
         <div className="font-mono text-xl tnum" style={{ color: accent ?? "var(--ink)" }}>{value}</div>
@@ -236,7 +236,7 @@ function LoadingConsole() {
           <div key={st} className="flex items-center gap-3 py-2.5">
             <span className="font-mono text-[11px] text-ink-faint">{String(i + 1).padStart(2, "0")}</span>
             <span className="relative h-1.5 flex-1 overflow-hidden rounded-full scan-sweep"
-                  style={{ background: "rgba(255,255,255,0.05)", animationDelay: `${i * 0.2}s` }} />
+                  style={{ background: "var(--surface-inset)", animationDelay: `${i * 0.2}s` }} />
             <span className="font-mono text-[12.5px] text-ink-dim">{st}</span>
           </div>
         ))}

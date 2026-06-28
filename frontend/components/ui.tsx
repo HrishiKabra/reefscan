@@ -56,7 +56,7 @@ export function ConfidenceBar({
   const h = scores.healthy * 100;
   const b = scores.bleached * 100;
   return (
-    <div className="w-full overflow-hidden rounded-full" style={{ height, background: "rgba(255,255,255,0.05)" }}>
+    <div className="w-full overflow-hidden rounded-full" style={{ height, background: "var(--surface-inset)" }}>
       <div className="flex h-full w-full">
         <div style={{ width: `${h}%`, background: classColor("healthy") }} />
         <div style={{ width: `${b}%`, background: classColor("bleached") }} />

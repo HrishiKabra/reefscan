@@ -62,7 +62,7 @@ export function TimeSeriesChart({
                                 stroke="var(--cyan)" strokeDasharray="3 3" />}
         {series.map((s) => s.values.map((v, i) => (
           <circle key={s.label + i} cx={x(i)} cy={y(v)} r={hover === i ? 4 : 0}
-                  fill="var(--bg-abyss)" stroke={s.color} strokeWidth={2} />
+                  fill="var(--surface)" stroke={s.color} strokeWidth={2} />
         )))}
         {dates.map((_, i) => (
           <rect key={i} x={x(i) - IW / (2 * Math.max(n - 1, 1))} y={PT}

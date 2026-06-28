@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
-  { href: "/", label: "Analyze", idx: "01" },
-  { href: "/admin/review", label: "Review", idx: "02" },
-  { href: "/tracker", label: "Tracker", idx: "03" },
-  { href: "/dashboard", label: "Dashboard", idx: "04" },
+  { href: "/", label: "Analyze", num: "01" },
+  { href: "/admin/review", label: "Review", num: "02" },
+  { href: "/tracker", label: "Tracker", num: "03" },
+  { href: "/dashboard", label: "Dashboard", num: "04" },
 ];
 
 export function Nav() {
@@ -14,57 +15,50 @@ export function Nav() {
   const active = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
 
   return (
-    <header className="sticky top-0 z-30">
-      <div
-        className="mx-auto flex w-full max-w-[1180px] items-center justify-between px-5 py-3.5 md:px-8"
-        style={{ background: "rgba(3,16,22,0.72)", backdropFilter: "blur(10px)", borderBottom: "1px solid var(--line)" }}
-      >
-        <Link href="/" className="group flex items-center gap-3">
-          <WaveMark />
-          <div className="leading-none">
-            <span className="font-display text-[19px] font-semibold tracking-tight text-ink">
-              Reef<span className="italic" style={{ color: "var(--cyan)" }}>Scan</span>
-            </span>
-            <div className="readout mt-1">benthic health · conformal</div>
-          </div>
-        </Link>
+    <header className="mx-auto flex w-full max-w-[1240px] flex-wrap items-center justify-between gap-4 px-4 py-5 md:px-8">
+      <Link href="/" className="flex items-center gap-3" style={{ textDecoration: "none", color: "inherit" }}>
+        <span className="grid h-[38px] w-[38px] place-items-center rounded-xl"
+              style={{ background: "var(--surface)", boxShadow: "var(--shadow)", border: "1px solid var(--line)" }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 13c2-2.4 4-2.4 6 0s4 2.4 6 0 4-2.4 6 0" />
+            <path d="M2 18c2-2.4 4-2.4 6 0s4 2.4 6 0 4-2.4 6 0" />
+            <circle cx="12" cy="6.5" r="2.4" />
+          </svg>
+        </span>
+        <span className="flex flex-col leading-none">
+          <span className="font-display text-[21px] font-medium tracking-tight">
+            Reef<span className="italic" style={{ color: "var(--accent)" }}>Scan</span>
+          </span>
+          <span className="readout mt-1" style={{ fontSize: "9.5px", letterSpacing: "0.22em" }}>Benthic Health</span>
+        </span>
+      </Link>
 
-        <nav className="flex items-center gap-1">
-          {LINKS.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="group relative rounded-full px-3.5 py-2 transition-colors"
-              style={{ color: active(l.href) ? "var(--ink)" : "var(--ink-dim)" }}
-            >
-              <span className="readout mr-1.5 opacity-50">{l.idx}</span>
-              <span className="font-mono text-[13px] tracking-wide">{l.label}</span>
-              {active(l.href) && (
-                <span
-                  className="absolute inset-x-2 -bottom-[1px] h-[2px] rounded-full"
-                  style={{ background: "var(--cyan)", boxShadow: "0 0 10px var(--cyan)" }}
-                />
-              )}
+      <nav aria-label="Primary" className="flex items-center gap-1 rounded-full p-[5px]"
+           style={{ background: "var(--surface)", border: "1px solid var(--line)", boxShadow: "var(--shadow)" }}>
+        {LINKS.map((l) => {
+          const on = active(l.href);
+          return (
+            <Link key={l.href} href={l.href}
+              className="flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors"
+              style={{
+                color: on ? "#fff" : "var(--ink-2s)",
+                background: on ? "var(--accent)" : "transparent",
+              }}>
+              <span className="font-mono text-[10px] opacity-60">{l.num}</span>
+              <span>{l.label}</span>
             </Link>
-          ))}
-        </nav>
+          );
+        })}
+      </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
-          <span className="live-dot inline-block h-1.5 w-1.5 rounded-full" style={{ background: "var(--flag)" }} />
-          <span className="readout">mock data</span>
-        </div>
+      <div className="flex items-center gap-2.5">
+        <span className="hidden items-center gap-1.5 sm:inline-flex readout">
+          <span className="live-dot inline-block h-[7px] w-[7px] rounded-full"
+                style={{ background: "var(--bleached)", boxShadow: "0 0 0 4px var(--bleached-soft)" }} />
+          Mock data
+        </span>
+        <ThemeToggle />
       </div>
     </header>
-  );
-}
-
-function WaveMark() {
-  return (
-    <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden>
-      <circle cx="15" cy="15" r="14" stroke="var(--line)" />
-      <path d="M3 17 Q 8 12, 12 17 T 21 17 T 30 17" stroke="var(--cyan)" strokeWidth="1.4" fill="none" />
-      <path d="M3 21 Q 8 16, 12 21 T 21 21 T 30 21" stroke="var(--healthy)" strokeWidth="1.1" fill="none" opacity="0.6" />
-      <circle cx="15" cy="15" r="14" stroke="var(--cyan)" strokeOpacity="0.25" />
-    </svg>
   );
 }

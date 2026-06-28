@@ -47,7 +47,7 @@ export default function ReviewPage() {
             <span className="text-ink">{confirmed}</span> / {RETRAIN_THRESHOLD} labels
           </span>
         </div>
-        <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.05)" }}>
+        <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ background: "var(--surface-inset)" }}>
           <div className="h-full rounded-full transition-all duration-500"
                style={{ width: `${progress}%`, background: "var(--cyan)", boxShadow: "0 0 12px var(--cyan)" }} />
         </div>

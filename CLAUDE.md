@@ -306,7 +306,15 @@ reefscan/
       naive int8 quant of DINOv2 REGRESSED latency 2.4× on ARM (honest negative). Also:
       CI (`.github/workflows/ci.yml`), `docker-compose.yml`, `retrain_trigger.py` (closes
       active-learning loop, verified live), HF **model card** pushed, README "Evaluation &
-      benchmarks" section, `docs/eval/` artifacts (plots + json). TODO: demo GIF.
+      benchmarks" section, `docs/eval/` artifacts (plots + json), demo GIF.
+- [x] **Phase 9** — UI redesign implemented. Flipped from the dark "abyssal instrument"
+      look to a **light-default + dark-toggle** soft-oceanographic system (Newsreader serif
+      + Manrope + JetBrains Mono, soft white cards, caustic-light backdrop, pill nav).
+      Done via token remap in `globals.css`/`tailwind.config.ts` (legacy token names aliased
+      so the flip propagates) + `ThemeToggle` (localStorage-persisted, no-flash init in
+      `layout.tsx`). `lib/api.ts`/`lib/types.ts` and routing UNTOUCHED. Source design files
+      (`ReefScan.dc.html`/`support.js`) removed after porting; screenshots + GIF regenerated.
+      Builds clean; all 4 pages + both themes verified.
 
 ---
 
