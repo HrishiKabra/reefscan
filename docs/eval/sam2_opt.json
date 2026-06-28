@@ -1,0 +1,10 @@
+{
+  "encoder_ms": 1452,
+  "full_amg_ms": 18395,
+  "mask_decode_ms": 16943,
+  "encoder_share_pct": 7.9,
+  "encoder_bf16_ms": 20315,
+  "bf16_speedup": 0.07,
+  "encoder_compiled_ms": 1657,
+  "compile_speedup": 0.88
+}

@@ -315,6 +315,16 @@ reefscan/
       `layout.tsx`). `lib/api.ts`/`lib/types.ts` and routing UNTOUCHED. Source design files
       (`ReefScan.dc.html`/`support.js`) removed after porting; screenshots + GIF regenerated.
       Builds clean; all 4 pages + both themes verified.
+- [x] **Phase 10** — SAM2 optimization (explored + measured) + hygiene. **Key correction:**
+      the earlier "SAM2 image *encoder* is the bottleneck" claim was WRONG. Deeper profiling
+      (`backend/optimize_sam2.py`): the encoder (`set_image`) is only **~8%** (~1.5s); **mask
+      decoding over the 16×16 prompt grid is ~92%** (~17s). Encoder opts both failed on CPU
+      (bf16 ~14× slower, torch.compile no gain) → ONNX-ing the encoder caps at ~8%. Real
+      lever = decoder throughput: **`points_per_batch=128` is a measured free ~8% win (same
+      masks) — SHIPPED in `segmenter.py`**; 256 regresses; grid density (`points_per_side`) is
+      the big knob but trades mask count (Phase 1.5 sweep). Corrected README + `bench.json`.
+      Hygiene: favicon (`app/icon.svg`), removed stale `DESIGN_BRIEF.md`, mobile/responsive
+      verified (no fixes needed).
 
 ---
 

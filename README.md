@@ -108,11 +108,24 @@ sets (1.95 ≈ "always both classes") — the wrong tool for binary. **The hones
 (87.6%)** — marginal conformal does not guarantee per-class coverage. Fix = Mondrian /
 class-conditional conformal (future work). This is a real limitation, surfaced by measuring it.
 
-### Inference profile — where the 45s goes
-Profiled per stage (CPU): **SAM2 AMG ≈ 16.7 s** vs **DINOv2 ≈ 112 ms/patch** → SAM2's image
-encoder is **~88–99% of wall-clock**. So the optimization target is the SAM2 encoder (ONNX +
-quantization), *not* the classifier. And a measured cautionary result: naive CPU dynamic-int8
-quantization of DINOv2 **regressed** latency 2.4× on ARM — optimizations get measured, not assumed.
+### Inference profile — profile before you optimize
+Coarse profile: **SAM2 AMG** dominates wall-clock; DINOv2 is ~112 ms/patch. The obvious next
+move is "ONNX-quantize the SAM2 image encoder." **Profiling deeper showed that's the wrong
+lever** ([`backend/optimize_sam2.py`](backend/optimize_sam2.py)):
+
+| SAM2 AMG component | time | share |
+|---|---:|---:|
+| image encoder (`set_image`) | ~1.5 s | **~8%** |
+| **mask decoding over the 256-point prompt grid** | ~17 s | **~92%** |
+
+So the encoder is only ~8% — ONNX-ing it caps out there. Confirmed by measuring two encoder
+optimizations that both **failed on CPU**: bf16 autocast (~14× *slower*) and `torch.compile`
+(no gain). The real lever is the **prompt grid / decoder throughput**: `points_per_batch=128`
+is a **measured free ~8% speedup with identical masks** (now shipped in `segmenter.py`; 256
+regresses), and grid density (`points_per_side`) is the dominant knob but trades mask count
+(swept in Phase 1.5). Separately, naive int8 quantization of DINOv2 **regressed** latency 2.4×
+on ARM. Takeaway: every optimization here was *measured*, and the headline assumption was wrong
+until it was profiled.
 
 ## Design decisions (the interesting part)
 

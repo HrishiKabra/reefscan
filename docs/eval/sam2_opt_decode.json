@@ -1,0 +1,38 @@
+[
+  {
+    "config": "pps16_ppb64 (baseline)",
+    "ms": 13715,
+    "n_masks": 1,
+    "points": 256,
+    "points_per_side": 16,
+    "points_per_batch": 64,
+    "speedup_vs_baseline": 1.0
+  },
+  {
+    "config": "pps16_ppb128",
+    "ms": 12724,
+    "n_masks": 1,
+    "points": 256,
+    "points_per_side": 16,
+    "points_per_batch": 128,
+    "speedup_vs_baseline": 1.08
+  },
+  {
+    "config": "pps16_ppb256",
+    "ms": 16299,
+    "n_masks": 1,
+    "points": 256,
+    "points_per_side": 16,
+    "points_per_batch": 256,
+    "speedup_vs_baseline": 0.84
+  },
+  {
+    "config": "pps12_ppb128",
+    "ms": 7747,
+    "n_masks": 1,
+    "points": 144,
+    "points_per_side": 12,
+    "points_per_batch": 128,
+    "speedup_vs_baseline": 1.77
+  }
+]

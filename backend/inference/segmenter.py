@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 # Locked AMG config (Phase 1.5). Keep in sync with CLAUDE.md.
 AMG_POINTS_PER_SIDE = settings.amg_points_per_side  # 16
 AMG_INPUT_LONGEST_EDGE = settings.amg_longest_edge  # 512
+# Phase 10 profiling: the AMG bottleneck is mask-decoding over the prompt grid (~92%), NOT
+# the image encoder (~8%). points_per_batch=128 (vs the default 64) is a measured free ~8%
+# speedup with identical masks; 256 regresses. See backend/optimize_sam2*.py + docs/eval/.
+AMG_POINTS_PER_BATCH = 128
 
 _amg = None  # loaded SAM2AutomaticMaskGenerator
 
@@ -35,8 +39,10 @@ def load() -> None:
     from sam2.build_sam import build_sam2_hf  # type: ignore
 
     model = build_sam2_hf("facebook/sam2-hiera-small", device="cpu")
-    _amg = SAM2AutomaticMaskGenerator(model, points_per_side=AMG_POINTS_PER_SIDE)
-    logger.info("SAM2 AMG loaded (pps=%d)", AMG_POINTS_PER_SIDE)
+    _amg = SAM2AutomaticMaskGenerator(
+        model, points_per_side=AMG_POINTS_PER_SIDE, points_per_batch=AMG_POINTS_PER_BATCH,
+    )
+    logger.info("SAM2 AMG loaded (pps=%d, ppb=%d)", AMG_POINTS_PER_SIDE, AMG_POINTS_PER_BATCH)
 
 
 def is_loaded() -> bool:
