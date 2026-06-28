@@ -17,9 +17,11 @@ Upload an underwater photo. ReefScan segments individual coral colonies, classif
 
 ## What it looks like
 
-**Analyze** — drop an image, get an annotated overlay (teal = healthy, amber = bleached, pulsing pink = *uncertain*), per-segment conformal sets, and an area-weighted health summary:
+A tour through the four pages — analyze → dashboard → tracker → review:
 
-![Analyze page](docs/screenshots/analyze.png)
+![ReefScan demo](docs/screenshots/demo.gif)
+
+**Analyze** — drop an image, get an annotated overlay (teal = healthy, amber = bleached, pulsing pink = *uncertain*), per-segment conformal sets, and an area-weighted health summary:
 
 | Review queue (active learning) | Temporal tracker | Observability dashboard |
 |---|---|---|
