@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-abyss: #03141a;
+  --bg-deep: #07232c;
+  --bg-panel: rgba(10, 38, 47, 0.55);
+  --ink: #e3f0ec;
+  --ink-dim: #80a8a1;
+  --ink-faint: #4d6f6b;
+  --line: rgba(120, 210, 196, 0.13);
+  --healthy: #2fe3a8;   /* living reef teal-green */
+  --bleached: #ffb24d;  /* bleach-warning amber  */
+  --flag: #ff6b8a;      /* uncertain / review    */
+  --cyan: #62ead6;      /* bioluminescent accent */
+}
+
+* { box-sizing: border-box; }
+
+html, body { padding: 0; margin: 0; background: var(--bg-abyss); color: var(--ink); }
+
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  /* light shafts filtering down through deep water */
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(98, 234, 214, 0.10), transparent 55%),
+    radial-gradient(90% 70% at 85% 0%, rgba(47, 227, 168, 0.06), transparent 50%),
+    linear-gradient(180deg, #062029 0%, var(--bg-abyss) 45%, #020d11 100%);
+  background-attachment: fixed;
+}
+
+/* ---- type ---- */
+.font-display { font-family: var(--font-display); }
+.readout {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.66rem;
+  color: var(--ink-dim);
+}
+.tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+/* ---- panels ---- */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+}
+.hairline { border-color: var(--line); }
+
+::selection { background: rgba(98, 234, 214, 0.25); color: #fff; }
+
+/* thin scrollbars */
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-thumb { background: rgba(98,234,214,0.18); border-radius: 99px; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* ---- animations ---- */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rise { opacity: 0; animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes flagpulse {
+  0%, 100% { opacity: 0.9; }
+  50%      { opacity: 0.35; }
+}
+.flag-ring { animation: flagpulse 1.6s ease-in-out infinite; }
+
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(220%); }
+}
+.scan-sweep::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(98,234,214,0.14), transparent);
+  animation: sweep 2.2s ease-in-out infinite;
+}
+
+@keyframes blink { 50% { opacity: 0.25; } }
+.live-dot { animation: blink 1.4s step-end infinite; }
+
+/* grain overlay used in Backdrop */
+.grain {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  opacity: 0.045; mix-blend-mode: overlay;
+}
