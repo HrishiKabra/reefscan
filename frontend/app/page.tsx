@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getInferenceResult, submitJob } from "@/lib/api";
 import type { InferenceResponse } from "@/lib/types";
 import { SegmentOverlay } from "@/components/SegmentOverlay";
@@ -242,20 +242,39 @@ function Stat({
 }
 
 function LoadingConsole() {
+  // The async backend reports queued/processing/complete, not granular stage progress —
+  // so we drive a time-based estimate (spinner + filling bar + advancing stage) that gives a
+  // clear sense of progress and asymptotes to ~95% until the real result lands.
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setElapsed((e) => e + 0.2), 200);
+    return () => clearInterval(t);
+  }, []);
+  const EST = 42; // seconds, first-run estimate on free CPU
+  const pct = Math.min(95, (elapsed / EST) * 100);
+  const stageIdx = Math.min(STAGES.length - 1, Math.floor((pct / 100) * STAGES.length));
+
   return (
-    <section className="rise panel mt-8 p-8">
-      <SectionLabel n="··">pipeline running</SectionLabel>
-      <div className="mx-auto max-w-md">
-        {STAGES.map((st, i) => (
-          <div key={st} className="flex items-center gap-3 py-2.5">
-            <span className="font-mono text-[11px] text-ink-faint">{String(i + 1).padStart(2, "0")}</span>
-            <span className="relative h-1.5 flex-1 overflow-hidden rounded-full scan-sweep"
-                  style={{ background: "var(--surface-inset)", animationDelay: `${i * 0.2}s` }} />
-            <span className="font-mono text-[12.5px] text-ink-dim">{st}</span>
-          </div>
-        ))}
-        <p className="mt-4 text-center font-mono text-[11px] text-ink-faint">
-          async job · ~15–25s on free CPU
+    <section className="rise panel mt-8 p-8 md:p-12">
+      <div className="mx-auto flex max-w-md flex-col items-center text-center">
+        <div className="relative mb-6 h-[72px] w-[72px]">
+          <div className="absolute inset-0 rounded-full" style={{ border: "3px solid var(--line)" }} />
+          <div className="absolute inset-0 rounded-full"
+               style={{ border: "3px solid transparent", borderTopColor: "var(--accent)",
+                        borderRightColor: "var(--accent)", animation: "spin 1s linear infinite" }} />
+          <div className="flag-ring absolute inset-4 rounded-full" style={{ background: "var(--accent-soft)" }} />
+        </div>
+        <p className="readout mb-2" style={{ color: "var(--accent-ink)" }}>pipeline running</p>
+        <h2 className="font-display mb-6 text-[clamp(1.4rem,3vw,1.9rem)]">{STAGES[stageIdx]}</h2>
+        <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: "var(--surface-inset)" }}>
+          <div className="h-full rounded-full transition-all duration-500"
+               style={{ width: `${pct}%`, background: "linear-gradient(90deg, var(--accent), var(--healthy))" }} />
+        </div>
+        <div className="mt-3 flex w-full justify-between font-mono text-[10.5px]" style={{ color: "var(--ink-3)" }}>
+          <span>SAM2 segment</span><span>DINOv2 classify</span><span>Conformal sets</span>
+        </div>
+        <p className="mt-5 font-mono text-[11px]" style={{ color: "var(--ink-faint)" }}>
+          async job · first run ~45s on free CPU
         </p>
       </div>
     </section>
