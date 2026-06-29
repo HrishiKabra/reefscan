@@ -1,0 +1,24 @@
+[55404164ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/dashboard?_rsc=1538b:0
+[55404169ms] [ERROR] Failed to fetch RSC payload for http://localhost:3000/dashboard. Falling back to browser navigation. TypeError: Failed to fetch
+    at s (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:45345)
+    at http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:58867
+    at Object.u [as task] (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:31771)
+    at c.s (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:32476)
+    at c.enqueue (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:31901)
+    at s (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:58830)
+    at i (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:58370)
+    at a (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:65154)
+    at http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:74991
+    at Object.action (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:2:7084) @ http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:0
+[55404187ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/admin/review?_rsc=1538b:0
+[55404187ms] [ERROR] Failed to fetch RSC payload for http://localhost:3000/admin/review. Falling back to browser navigation. TypeError: Failed to fetch
+    at s (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:45345)
+    at http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:58867
+    at Object.u [as task] (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:31771)
+    at c.s (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:32476)
+    at c.enqueue (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:31901)
+    at s (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:58830)
+    at i (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:58370)
+    at a (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:65154)
+    at http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:1:74991
+    at Object.action (http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:2:7084) @ http://localhost:3000/_next/static/chunks/23-a3a1b6f47a77ad02.js:0

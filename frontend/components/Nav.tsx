@@ -18,13 +18,10 @@ export function Nav() {
   return (
     <header className="mx-auto flex w-full max-w-[1240px] flex-wrap items-center justify-between gap-4 px-4 py-5 md:px-8">
       <Link href="/" className="flex items-center gap-3" style={{ textDecoration: "none", color: "inherit" }}>
-        <span className="grid h-[38px] w-[38px] place-items-center rounded-xl"
-              style={{ background: "var(--surface)", boxShadow: "var(--shadow)", border: "1px solid var(--line)" }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2 13c2-2.4 4-2.4 6 0s4 2.4 6 0 4-2.4 6 0" />
-            <path d="M2 18c2-2.4 4-2.4 6 0s4 2.4 6 0 4-2.4 6 0" />
-            <circle cx="12" cy="6.5" r="2.4" />
-          </svg>
+        <span className="grid h-[38px] w-[38px] place-items-center overflow-hidden rounded-xl"
+              style={{ background: "#fff", boxShadow: "var(--shadow)", border: "1px solid var(--line)" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="ReefScan logo" width={28} height={28} />
         </span>
         <span className="flex flex-col leading-none">
           <span className="font-display text-[21px] font-medium tracking-tight">
