@@ -1,0 +1,120 @@
+"""Benchmark harness — the spine of ReefScan-Edge.
+
+Every rung registers a variant via `benchmark(name, runtime, precision, predict_fn, ...)`.
+The four correctness invariants from the spec are enforced here:
+  1. GPU timing = warmup + torch.cuda.synchronize() around every measured call (device-aware:
+     syncs only on CUDA, so the same harness runs on CPU locally and GPU on Colab).
+  2. macro-F1 computed on the SAME fixed test set for every variant.
+  3. (calibration handled in data.load_calibration — used by the int8 rungs.)
+  4. batch-1 and batched throughput are separate rows, never conflated.
+
+`predict_fn(x)` takes a batched input tensor and returns logits (torch.Tensor or np.ndarray);
+this keeps the harness runtime-agnostic — pytorch / onnxruntime / tensorrt all plug in the same.
+"""
+from __future__ import annotations
+
+import csv
+import os
+import time
+
+import numpy as np
+import torch
+
+CSV_PATH = "edge/results.csv"
+MD_PATH = "edge/RESULTS.md"
+FIELDS = ["name", "runtime", "precision", "device", "batch", "p50_ms", "p95_ms", "p99_ms",
+          "throughput_ips", "peak_mem_mb", "macro_f1", "accuracy", "n_test"]
+
+
+def _sync(device: str) -> None:
+    if device == "cuda":
+        torch.cuda.synchronize()
+
+
+def _to_logits_np(out) -> np.ndarray:
+    if torch.is_tensor(out):
+        return out.detach().float().cpu().numpy()
+    return np.asarray(out)
+
+
+@torch.no_grad()
+def time_latency(predict, x, device: str, warmup: int, iters: int) -> dict:
+    """Invariant #1: warmup, then sync-bracketed perf_counter around each measured call."""
+    if device == "cuda":
+        torch.cuda.reset_peak_memory_stats()
+    for _ in range(warmup):
+        predict(x); _sync(device)
+    lat = []
+    for _ in range(iters):
+        _sync(device); t0 = time.perf_counter()
+        predict(x)
+        _sync(device); lat.append((time.perf_counter() - t0) * 1e3)
+    lat = np.array(lat)
+    mem = torch.cuda.max_memory_allocated() / 1e6 if device == "cuda" else None
+    return {"p50_ms": float(np.percentile(lat, 50)), "p95_ms": float(np.percentile(lat, 95)),
+            "p99_ms": float(np.percentile(lat, 99)),
+            "throughput_ips": float(x.shape[0] * 1000.0 / lat.mean()), "peak_mem_mb": mem}
+
+
+@torch.no_grad()
+def macro_f1(predict, test_x: torch.Tensor, test_y: np.ndarray, device: str, eval_batch: int = 64) -> tuple[float, float]:
+    """Invariant #2: accuracy on the SAME fixed test set, every variant."""
+    from sklearn.metrics import accuracy_score, f1_score
+    preds = []
+    for i in range(0, len(test_y), eval_batch):
+        xb = test_x[i:i + eval_batch].to(device)
+        preds.append(_to_logits_np(predict(xb)).argmax(1))
+    yp = np.concatenate(preds)
+    return (float(f1_score(test_y, yp, labels=[0, 1], average="macro", zero_division=0)),
+            float(accuracy_score(test_y, yp)))
+
+
+def benchmark(name: str, runtime: str, precision: str, predict, test_x: torch.Tensor,
+              test_y: np.ndarray, device: str, batch_sizes=(1, 32),
+              warmup: int | None = None, iters: int | None = None) -> list[dict]:
+    """Run one variant: macro-F1 once (batch-independent) + latency per batch size (invariant #4)."""
+    f1, acc = macro_f1(predict, test_x, test_y, device)
+    w = warmup if warmup is not None else (20 if device == "cuda" else 3)
+    it = iters if iters is not None else (200 if device == "cuda" else 15)
+    rows = []
+    for bs in batch_sizes:
+        x = test_x[:bs].to(device)  # a real input batch of this size
+        lat = time_latency(predict, x, device, w, it)
+        rows.append({"name": name, "runtime": runtime, "precision": precision, "device": device,
+                     "batch": bs, "macro_f1": round(f1, 4), "accuracy": round(acc, 4),
+                     "n_test": int(len(test_y)),
+                     **{k: (round(v, 2) if isinstance(v, float) else v) for k, v in lat.items()}})
+    return rows
+
+
+def append_results(rows: list[dict], csv_path: str = CSV_PATH, md_path: str = MD_PATH) -> None:
+    exists = os.path.exists(csv_path)
+    with open(csv_path, "a", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS)
+        if not exists:
+            w.writeheader()
+        for r in rows:
+            w.writerow({k: r.get(k) for k in FIELDS})
+    _write_md(csv_path, md_path)
+
+
+def _write_md(csv_path: str, md_path: str) -> None:
+    rows = list(csv.DictReader(open(csv_path)))
+
+    def num(v, nd=2):
+        try:
+            return f"{float(v):.{nd}f}"
+        except (TypeError, ValueError):
+            return "—"
+
+    out = ["# ReefScan-Edge — benchmark results", "",
+           "Same 1,565-image held-out test set for every variant. Latency = warmup + sync-bracketed.",
+           "Batch-1 and batched rows are separate (never conflated).", "",
+           "| runtime | precision | device | batch | p50 ms | p95 ms | p99 ms | throughput img/s | peak mem MB | macro-F1 | acc |",
+           "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
+    for r in rows:
+        mem = num(r.get("peak_mem_mb"), 0) if r.get("peak_mem_mb") not in ("", "None", None) else "—"
+        out.append(f"| {r['runtime']} | {r['precision']} | {r.get('device','')} | {r['batch']} | {num(r['p50_ms'])} | "
+                   f"{num(r['p95_ms'])} | {num(r['p99_ms'])} | {num(r['throughput_ips'], 1)} | {mem} | "
+                   f"{num(r['macro_f1'], 4)} | {num(r['accuracy'], 4)} |")
+    open(md_path, "w").write("\n".join(out) + "\n")

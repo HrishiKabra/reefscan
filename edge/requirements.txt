@@ -1,0 +1,19 @@
+# ReefScan-Edge — pinned deps (reproducibility is part of the grade, per spec §3).
+# Local CPU (harness scaffolding, ONNX-CPU, plots, tests) uses these.
+# GPU rungs (torch-cuda, onnxruntime-gpu, TensorRT, Triton) are pinned per-rung in the
+# Colab cell blocks + README, against the NGC container versions (CUDA/TensorRT must match).
+
+torch==2.4.1                 # CPU build locally; Colab GPU uses the CUDA wheel (see README)
+torchvision==0.19.1
+transformers==4.44.2
+safetensors==0.4.5
+huggingface_hub==0.25.2
+pyarrow==17.0.0
+numpy==1.26.4
+scikit-learn==1.5.2
+pillow==10.4.0
+matplotlib==3.9.2
+
+# Rung 3 (ONNX) — added when that phase lands:
+# onnx==1.16.2
+# onnxruntime==1.19.2         # CPU; onnxruntime-gpu==1.19.2 on Colab
