@@ -27,3 +27,6 @@ out/
 # misc
 .DS_Store
 wandb/
+
+# playwright mcp artifacts
+.playwright-mcp/
