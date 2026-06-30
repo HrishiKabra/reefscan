@@ -53,7 +53,9 @@ def main():
 
     cuda1 = [r for r in rows if r["device"] == "cuda" and r["batch"] == 1]
     cuda32 = [r for r in rows if r["device"] == "cuda" and r["batch"] == 32]
-    int8 = [r for r in rows if r["precision"] == "int8" and r["batch"] == 1]
+    # ORT static int8 (CPU) is the documented collapse — annotate it; TRT int8 (cuda, if present) is a
+    # real GPU operating point and rides the scatter above like any other cuda variant.
+    int8 = [r for r in rows if r["precision"] == "int8" and r["device"] == "cpu" and r["batch"] == 1]
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5.2))
 

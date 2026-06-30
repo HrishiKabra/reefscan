@@ -27,3 +27,6 @@ onnx==1.16.2
 # Rung 3b (precision) — fp16 + int8 PTQ:
 onnxconverter-common==1.14.0   # fp16 graph conversion (needs numpy<2)
 # int8 static PTQ uses onnxruntime.quantization (no extra dep)
+
+# Rung 4 (TensorRT) — GPU only, installed on Colab (not in this CPU env):
+# tensorrt==10.5.0             # cu12 wheel; TRT 10.x Python API (execute_async_v3 / set_tensor_address)

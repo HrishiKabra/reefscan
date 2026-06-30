@@ -21,6 +21,7 @@ PYTHONPATH=. python -m edge.run_baseline        # Rung 1 — fp32 baseline (CPU 
 PYTHONPATH=. python -m edge.run_rung2           # Rung 2 — torch.compile (GPU rung; run on Colab)
 PYTHONPATH=. python -m edge.run_rung3           # Rung 3 — ONNX export + ONNX Runtime (CUDA EP)
 PYTHONPATH=. python -m edge.run_rung3b          # Rung 3b — fp16 + int8 PTQ + TF32 control
+PYTHONPATH=. python -m edge.run_rung4           # Rung 4 — TensorRT fp16 + int8 (entropy calib) [GPU only]
 PYTHONPATH=. python -m edge.plot_pareto         # Pareto frontier -> edge/docs/pareto.png
 ```
 The Colab notebook `edge/colab/reefscan_edge.ipynb` runs the GPU rungs end-to-end (upload + Run all).
@@ -60,3 +61,4 @@ TensorRT/CUDA mismatches waste hours, so the GPU rungs run in the NGC containers
 | 2 torch.compile | torch 2.4.1 Inductor, `mode=max-autotune` — Colab L4 (cu121) |
 | 3 ONNX Runtime | onnx 1.16.2, opset 17 (dynamic batch); onnxruntime-gpu 1.19.2 CUDA EP (cuDNN 9 via torch's bundled libs) — Colab L4 |
 | 3b fp16 + int8 | onnxconverter-common 1.14.0 (fp16, needs numpy<2); ORT static int8 PTQ (QDQ, per-channel), calib = `load_calibration()` — Colab L4 |
+| 4 TensorRT | tensorrt 10.5.0 (cu12) Python API; fp16 + int8 (IInt8EntropyCalibrator2, calib = `load_calibration()`) — Colab L4 |
