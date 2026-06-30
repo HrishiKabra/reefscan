@@ -17,8 +17,11 @@ to `results.csv` + `RESULTS.md`. Correctness invariants enforced in `harness.py`
 ## Run
 ```bash
 # from repo root
-PYTHONPATH=. python -m edge.run_baseline        # Rung 1 — CPU locally, GPU on Colab
+PYTHONPATH=. python -m edge.run_baseline        # Rung 1 — fp32 baseline (CPU locally, GPU on Colab)
+PYTHONPATH=. python -m edge.run_rung2           # Rung 2 — torch.compile (GPU rung; run on Colab)
 ```
+The Colab notebook `edge/colab/reefscan_edge.ipynb` runs the GPU rungs end-to-end (upload + Run all).
+`results.csv` is append-by-replace: re-running a rung overwrites its rows, never duplicates them.
 
 ## Phases (spec §6)
 - **Weekend 1:** Rung 1 baseline (this) → Rungs 2–3 (torch.compile, ONNX) → Rung 3b (fp16 + int8 PTQ, first Pareto plot).
@@ -33,4 +36,5 @@ TensorRT/CUDA mismatches waste hours, so the GPU rungs run in the NGC containers
 
 | rung | versions (filled per phase) |
 |---|---|
-| 1 PyTorch fp32 | torch 2.4.1 (local CPU verify); Colab T4/L4 CUDA wheel TBD |
+| 1 PyTorch fp32 | torch 2.4.1 — local CPU verify + Colab **L4** (torch 2.4.1+cu121) |
+| 2 torch.compile | torch 2.4.1 Inductor, `mode=max-autotune` — Colab L4 (cu121) |

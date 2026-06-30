@@ -87,14 +87,23 @@ def benchmark(name: str, runtime: str, precision: str, predict, test_x: torch.Te
     return rows
 
 
+KEY = ("name", "runtime", "precision", "device", "batch")
+
+
 def append_results(rows: list[dict], csv_path: str = CSV_PATH, md_path: str = MD_PATH) -> None:
-    exists = os.path.exists(csv_path)
-    with open(csv_path, "a", newline="") as f:
+    """Idempotent: a row with the same (name,runtime,precision,device,batch) REPLACES the prior
+    one (last-wins), so re-running a rung never duplicates rows. First-seen order is preserved."""
+    merged: dict = {}
+    if os.path.exists(csv_path):
+        for r in csv.DictReader(open(csv_path)):
+            merged[tuple(str(r.get(k)) for k in KEY)] = {k: r.get(k) for k in FIELDS}
+    for r in rows:
+        merged[tuple(str(r.get(k)) for k in KEY)] = {k: r.get(k) for k in FIELDS}
+    with open(csv_path, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
-        if not exists:
-            w.writeheader()
-        for r in rows:
-            w.writerow({k: r.get(k) for k in FIELDS})
+        w.writeheader()
+        for r in merged.values():
+            w.writerow(r)
     _write_md(csv_path, md_path)
 
 
