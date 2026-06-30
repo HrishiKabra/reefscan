@@ -45,11 +45,11 @@ def export_onnx(model, device: str) -> None:
     print(f"[rung3] exported ONNX -> {ONNX_PATH} ({os.path.getsize(ONNX_PATH) / 1e6:.0f} MB)", flush=True)
 
 
-def make_session(device: str):
+def make_session(device: str, path: str = ONNX_PATH):
     import onnxruntime as ort
     providers = (["CUDAExecutionProvider", "CPUExecutionProvider"] if device == "cuda"
                  else ["CPUExecutionProvider"])
-    sess = ort.InferenceSession(ONNX_PATH, providers=providers)
+    sess = ort.InferenceSession(path, providers=providers)
     active = sess.get_providers()
     print(f"[rung3] ORT active providers: {active}", flush=True)
     if device == "cuda" and "CUDAExecutionProvider" not in active:

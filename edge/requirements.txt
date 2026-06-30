@@ -9,7 +9,7 @@ transformers==4.44.2
 safetensors==0.4.5
 huggingface_hub==0.25.2
 pyarrow==17.0.0
-numpy==1.26.4
+numpy==1.26.4               # MUST stay <2: onnxconverter-common 1.14 (fp16) + ORT/torch wheel ABI
 scikit-learn==1.5.2
 pillow==10.4.0
 matplotlib==3.9.2
@@ -21,3 +21,9 @@ onnx==1.16.2
 # already bundles (nvidia-cudnn-cu12 9.1). The Colab notebook sets LD_LIBRARY_PATH at those libs
 # so ORT's CUDA EP loads against matched versions (avoids the ORT<->system-cuDNN mismatch).
 # torch>=2.5 routes export through onnxscript; the pinned 2.4.1 uses the legacy exporter (no extra dep).
+# NOTE: transformers MUST be 4.44.2 — newer versions route Dinov2 through F.scaled_dot_product_attention,
+# which torch 2.4.1's legacy ONNX exporter mis-handles (scale-const symbolic bug). 4.44.2 exports clean.
+
+# Rung 3b (precision) — fp16 + int8 PTQ:
+onnxconverter-common==1.14.0   # fp16 graph conversion (needs numpy<2)
+# int8 static PTQ uses onnxruntime.quantization (no extra dep)
