@@ -27,10 +27,16 @@ The Colab notebook `edge/colab/reefscan_edge.ipynb` runs the GPU rungs end-to-en
 `results.csv` is append-by-replace: re-running a rung overwrites its rows, never duplicates them.
 
 ## Rung 3b findings (precision)
-- **fp16 is the precision win: lossless.** The ONNX graph cast to fp16 (keep_io_types) matches fp32
-  macro-F1 exactly on the test set, and uses the GPU's tensor cores (which fp32 leaves idle).
-- **TF32 control** isolates how much of the ONNX-Runtime win was TF32 vs graph fusion — PyTorch eager
-  defaults TF32 *off* for matmul, so the fp32 baseline never touched tensor cores.
+- **fp16 is the precision win, and it's lossless.** The ONNX graph cast to fp16 (keep_io_types)
+  matches ORT-fp32 macro-F1 exactly (0.8861) and is the Pareto-optimal point: batch-1 **3.12 ms p95
+  (3.2× over PyTorch fp32)**, **448 img/s batched (3.7×)** — using the tensor cores fp32 leaves idle.
+- **The TF32 control resolved the Rung-3 mystery (and corrected my first guess).** Enabling TF32 in
+  PyTorch lifted batch-32 throughput 122 → 226 img/s — landing right next to ORT-fp32's 237. So ~all of
+  ORT's apparent "fp32" advantage was **TF32 tensor cores** (ORT enables them by default; PyTorch eager
+  defaults TF32 *off* for matmul), not ONNX graph magic. BUT TF32 did **not** move accuracy
+  (pytorch-tf32 stayed 0.8853, same as strict fp32), so the small 0.8853 → 0.8861 nudge on the ORT rows
+  is ORT's fused-kernel numerics (LayerNorm/GELU), independent of TF32 — not the TF32 effect I'd
+  speculated at Rung 3.
 - **int8 static PTQ collapses this ViT — a documented negative.** Across naive all-op vs MatMul-only
   quantization × MinMax vs Entropy calibration, static int8 lands at ~0.43–0.48 macro-F1 (≈ majority
   class). DINOv2's heavy-tailed activation outliers get squashed by static int8 calibration. The
