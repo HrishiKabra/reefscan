@@ -27,6 +27,20 @@ PYTHONPATH=. python -m edge.plot_pareto         # Pareto frontier -> edge/docs/p
 The Colab notebook `edge/colab/reefscan_edge.ipynb` runs the GPU rungs end-to-end (upload + Run all).
 `results.csv` is append-by-replace: re-running a rung overwrites its rows, never duplicates them.
 
+## Rung 4 findings (TensorRT) — the headline
+- **TensorRT fp16 wins the whole ladder, on both axes.** batch-1 **2.24 ms** (4.5× over the PyTorch
+  fp32 GPU baseline, 63× over CPU), batched **924 img/s** (7.2× over fp32 GPU), and macro-F1 **0.8888**
+  — the *best* accuracy of any variant (≥ fp32, within label noise). TRT fuses the whole transformer
+  and autotunes kernels for the actual L4.
+- **TensorRT int8 recovers the collapse — proving the Rung-3b diagnosis.** ORT static int8 (MinMax)
+  cratered to **0.3992** F1; TRT int8 with the **entropy calibrator** lands **0.884** (+0.48 absolute).
+  It was the calibration method, not int8 itself — exactly what Rung 3b predicted.
+- **But on the L4, int8 is *dominated* by fp16 — an honest "int8 isn't always worth it."** int8 is the
+  same speed as fp16 (2.29 vs 2.24 ms; 903 vs 924 img/s) while giving up ~0.005 F1. On Ada the fp16
+  tensor cores already saturate for a model this size, so int8's quant/dequant overhead buys nothing;
+  its win would surface on older GPUs (T4), larger models, or memory-bound regimes. **Pareto verdict:
+  ship TensorRT fp16.**
+
 ## Rung 3b findings (precision)
 - **fp16 is the precision win, and it's lossless.** The ONNX graph cast to fp16 (keep_io_types)
   matches ORT-fp32 macro-F1 exactly (0.8861) and is the Pareto-optimal point: batch-1 **3.12 ms p95
