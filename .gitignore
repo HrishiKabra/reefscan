@@ -30,3 +30,6 @@ wandb/
 
 # playwright mcp artifacts
 .playwright-mcp/
+
+# ReefScan-Edge exported model artifacts (large, reproducible)
+edge/artifacts/

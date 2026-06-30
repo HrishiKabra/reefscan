@@ -14,6 +14,10 @@ scikit-learn==1.5.2
 pillow==10.4.0
 matplotlib==3.9.2
 
-# Rung 3 (ONNX) — added when that phase lands:
-# onnx==1.16.2
-# onnxruntime==1.19.2         # CPU; onnxruntime-gpu==1.19.2 on Colab
+# Rung 3 (ONNX) — export + ONNX Runtime:
+onnx==1.16.2
+# onnxruntime==1.19.2 on CPU (local export + correctness gate);
+# onnxruntime-gpu==1.19.2 on Colab — its CUDA-12 build needs cuDNN 9, which torch 2.4.1+cu121
+# already bundles (nvidia-cudnn-cu12 9.1). The Colab notebook sets LD_LIBRARY_PATH at those libs
+# so ORT's CUDA EP loads against matched versions (avoids the ORT<->system-cuDNN mismatch).
+# torch>=2.5 routes export through onnxscript; the pinned 2.4.1 uses the legacy exporter (no extra dep).
