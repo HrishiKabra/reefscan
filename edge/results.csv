@@ -1,7 +1,9 @@
 name,runtime,precision,device,batch,p50_ms,p95_ms,p99_ms,throughput_ips,peak_mem_mb,macro_f1,accuracy,n_test
 pytorch-fp32,pytorch,fp32,cpu,1,141.31,160.99,165.7,7.02,,0.8874,0.8952,1565
 pytorch-fp32,pytorch,fp32,cpu,32,3712.9,4324.04,4361.1,8.5,,0.8874,0.8952,1565
-pytorch-fp32,pytorch,fp32,cuda,1,9.99,10.01,10.02,100.18,369.38,0.8853,0.8933,1565
-pytorch-fp32,pytorch,fp32,cuda,32,246.39,253.12,257.96,130.16,780.45,0.8853,0.8933,1565
-torch-compile,torch.compile,fp32,cuda,1,8.78,9.27,9.31,112.28,363.36,0.8853,0.8933,1565
-torch-compile,torch.compile,fp32,cuda,32,239.47,241.43,242.31,134.24,603.34,0.8853,0.8933,1565
+pytorch-fp32,pytorch,fp32,cuda,1,9.99,10.23,11.27,99.62,369.38,0.8853,0.8933,1565
+pytorch-fp32,pytorch,fp32,cuda,32,241.05,247.69,248.53,132.44,780.45,0.8853,0.8933,1565
+torch-compile,torch.compile,fp32,cuda,1,8.89,9.22,9.37,112.1,363.36,0.8853,0.8933,1565
+torch-compile,torch.compile,fp32,cuda,32,224.79,231.41,234.35,142.12,603.34,0.8853,0.8933,1565
+onnxruntime,onnxruntime,fp32,cuda,1,4.89,5.13,5.18,203.22,361.07,0.8861,0.8939,1565
+onnxruntime,onnxruntime,fp32,cuda,32,126.32,127.58,128.31,253.6,379.73,0.8861,0.8939,1565
