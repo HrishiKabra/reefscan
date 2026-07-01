@@ -5,6 +5,37 @@ An optimization ladder over the trained DINOv2-B coral classifier: map the full
 TensorRT fp16/int8 → Triton) on the **same 1,565-image held-out test set**. Full plan:
 [`docs/V2_SPEC.md`](../docs/V2_SPEC.md).
 
+## The result
+
+**TensorRT fp16 wins the ladder: ~2.3 ms batch-1 (63× faster than CPU, 4.3× over the PyTorch-GPU
+baseline), ~920 img/s batched (7.2×), at the best accuracy of any variant (macro-F1 0.887) — zero
+accuracy cost.** Ship it.
+
+| stage | batch-1 p95 | batched img/s | macro-F1 | note |
+|---|---:|---:|---:|---|
+| PyTorch fp32 (CPU) | 161 ms | 8 | 0.887 | the starting point |
+| PyTorch fp32 (L4) | 10.0 ms | 128 | 0.885 | GPU, but tensor cores idle (TF32 off) |
+| torch.compile | 9.1 ms | 140 | 0.885 | launch-bound win |
+| ONNX Runtime fp16 | 3.1 ms | 491 | 0.886 | tensor cores, lossless |
+| **TensorRT fp16** | **2.3 ms** | **~920** | **0.887** | **champion — fused + autotuned** |
+| TensorRT int8 | 2.4 ms | ~900 | 0.884 | recovers ORT's collapse; but dominated by fp16 on Ada |
+| ONNX Runtime int8 (CPU) | — | — | **0.399** | naive static PTQ **collapses** (documented negative) |
+
+![Pareto frontier](docs/pareto.png)
+
+**Serving economics** (`run_sweep`, TRT fp16, L4 @ $0.80/hr): throughput peaks at **954 img/s @
+batch 16** — past that, batching 32/64 makes it *worse* on both axes (the backward-bending curve
+below). Cheapest point is **$0.23 per million inferences** (batch 16), ~7× cheaper per image than the
+fp32-GPU baseline on the same hardware. Under a 5 ms p95 SLA, batch 4 still delivers 862 img/s.
+
+![Serving curve](docs/serving_curve.png)
+
+**What makes this defensible, not just fast:** one harness with enforced invariants (same test set,
+warmup+sync timing, batch-1/batched separated, representative int8 calibration); every rung's win
+traced to a *reason* (TF32 vs fusion isolated by a control; fp16 lossless; TRT fusion); and **honest
+negatives kept in** — naive int8 collapses (0.399), TRT int8 recovers via entropy calibration (0.884)
+but is then dominated by fp16 on Ada. Knowing *when not* to use int8 is the point.
+
 ## The harness is the spine
 `harness.py` defines `benchmark(name, runtime, precision, predict_fn, …)`. Every rung just
 registers a new `(runtime, precision, batch)` variant — same timing, same test set, appended

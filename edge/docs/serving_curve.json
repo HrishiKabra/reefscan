@@ -1,0 +1,56 @@
+{
+  "gpu": "NVIDIA L4",
+  "usd_per_hr": 0.8,
+  "sla_ms": 5.0,
+  "rows": [
+    {
+      "batch": 1,
+      "p50_ms": 2.42,
+      "p95_ms": 2.44,
+      "throughput_ips": 414.8,
+      "usd_per_1k": 0.00054
+    },
+    {
+      "batch": 2,
+      "p50_ms": 3.3,
+      "p95_ms": 3.42,
+      "throughput_ips": 600.0,
+      "usd_per_1k": 0.00037
+    },
+    {
+      "batch": 4,
+      "p50_ms": 4.61,
+      "p95_ms": 4.75,
+      "throughput_ips": 862.0,
+      "usd_per_1k": 0.00026
+    },
+    {
+      "batch": 8,
+      "p50_ms": 8.57,
+      "p95_ms": 8.69,
+      "throughput_ips": 929.8,
+      "usd_per_1k": 0.00024
+    },
+    {
+      "batch": 16,
+      "p50_ms": 16.73,
+      "p95_ms": 16.94,
+      "throughput_ips": 954.5,
+      "usd_per_1k": 0.00023
+    },
+    {
+      "batch": 32,
+      "p50_ms": 36.81,
+      "p95_ms": 37.28,
+      "throughput_ips": 869.2,
+      "usd_per_1k": 0.00026
+    },
+    {
+      "batch": 64,
+      "p50_ms": 88.38,
+      "p95_ms": 90.08,
+      "throughput_ips": 723.1,
+      "usd_per_1k": 0.00031
+    }
+  ]
+}
