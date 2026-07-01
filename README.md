@@ -179,6 +179,30 @@ This is a *system*, not just a model.
 
 ---
 
+## Serving & inference
+
+An ML-systems layer over the trained model — real serving metrics, a self-hosted VLM baseline, and a
+hand-written CUDA kernel. Rationale for the non-obvious calls is in [`DECISIONS.md`](DECISIONS.md).
+
+- **Latency percentiles + throughput under load.** Observability computes **p50/p95/p99 + throughput
+  (req/s)** over a window (`backend/observability.py`), and `backend/loadtest.py` drives the real
+  `/infer` submit→poll→complete path at rising concurrency. Measured (Apple-Silicon CPU, stub backend):
+  **p99 34 → 171 ms**, widest **p99/p50 gap 2.7× at concurrency 16**, throughput peaking ~226 req/s then
+  saturating. Surfaced on `/dashboard`, labeled with the concurrency it was measured at.
+- **Fused CUDA preprocessing kernel** (`notebooks/serving_inference.ipynb`, Part B). One kernel fuses
+  `uint8 HWC → float32 NCHW → ImageNet-normalize` (4 memory passes → 1). Profiled *first* to state
+  preprocessing's latency share, `torch.allclose`-verified against the multi-op torch tail, then
+  benchmarked vs it. Honest: bandwidth-bound, small end-to-end win, real kernel-authoring demo.
+- **Self-hosted VLM baseline** (Part C). **Qwen2.5-VL-7B** served with vLLM (OpenAI-compatible) re-runs the
+  VLM benchmark on the same NOAA test split — a $0, reproducible open-model column **added next to** the
+  GPT-4o one: `DINOv2 specialist vs GPT-4o vs Qwen2.5-VL` on accuracy / macro-F1 / ECE.
+- **vLLM serving sweep** (Part D). Concurrency 1→32 → p50/p95/p99 latency + throughput curve for the
+  self-hosted 7B VLM.
+- **Triton (production path).** [`edge/serving/`](edge/serving/) has the `config.pbtxt` (dynamic batching)
+  + `docker-compose.yml`; [`edge/serving/RUNPOD.md`](edge/serving/RUNPOD.md) is the turnkey way to run it on
+  a real GPU+Docker box with `perf_analyzer` (~15 min, <$1) — deferred there rather than hacked into Colab,
+  which has no Docker daemon.
+
 ## Repo layout
 
 ```
