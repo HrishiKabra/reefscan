@@ -167,7 +167,13 @@ This is a *system*, not just a model.
 
 - **Reproducible training** (`notebooks/01_train_dinov2.ipynb`): one-shot Colab/Kaggle notebook that loads the dataset via its **parquet shards** (4 files vs. 10,419 PNGs — minutes, not hours), checkpoints every epoch, **resumes from the latest checkpoint** across session deaths, logs to W&B, and pushes weights + `conformal.json` to the Hub — all in a single cell so nothing is left to a forgotten manual step.
 - **Active-learning flywheel**: conformal set size > 1 → `review_queue` → human confirms in `/admin/review` → `human_labels`. Retraining is **manual** (triggered at 100 new labels) to conserve GPU budget — never auto-wired.
-- **Observability from raw SQL** (`/dashboard`): rolling mean prediction-set size (drift proxy), inference latency p50/p95, and class-distribution shift (this week vs. baseline) — all computed from `inference_logs`, no external observability tool.
+- **Observability from raw SQL** (`/dashboard`): rolling mean prediction-set size (drift proxy), inference latency **p50/p95/p99 + throughput (req/s)**, and class-distribution shift (this week vs. baseline) — all computed from `inference_logs`, no external observability tool.
+- **Serving load test** (`backend/loadtest.py`): an asyncio concurrency sweep over the real `/infer` submit→poll→complete path, reporting end-to-end p50/p95/p99 + throughput and exposing tail divergence under load. Measured (Apple Silicon CPU, stub backend): **p99 34 ms → 171 ms** and the widest **p99/p50 gap 2.7× at concurrency 16**, throughput peaking ~226 req/s then saturating. The sweep is surfaced on the dashboard (labeled with its concurrency).
+  ```bash
+  REEFSCAN_STUB=1 uvicorn backend.main:app --port 8000        # terminal 1
+  python -m backend.loadtest --sweep 1,4,8,16,32 --n 64 \      # terminal 2
+      --out docs/eval/loadtest.json --machine "your CPU" --stub
+  ```
 - **Resilient logging**: the Supabase (httpx) client is shared across the event loop and the inference worker thread; on the deployed box this intermittently dropped writes (diagnosed via Postgres logs as client-side, not DB-side). Fixed with a serialize-lock + retry (`persistence._sb_call`) — the kind of production hardening that only shows up once something's actually deployed.
 - **Graceful degradation**: with no weights, the API serves contract-valid *stub* output; with no Supabase/Storage, logging/storage no-op. The frontend falls back to mock data when `NEXT_PUBLIC_REEFSCAN_API` is unset — so every layer runs standalone for development.
 
