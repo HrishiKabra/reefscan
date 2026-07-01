@@ -1,0 +1,58 @@
+{
+  "target": "http://localhost:8011",
+  "machine": "Apple Silicon CPU (2 perf cores used)",
+  "stub": true,
+  "poll_s": 0.02,
+  "levels": [
+    {
+      "concurrency": 1,
+      "n": 48,
+      "ok": 48,
+      "p50_ms": 28.8,
+      "p95_ms": 32.7,
+      "p99_ms": 34.3,
+      "throughput_rps": 34.75,
+      "wall_s": 1.38
+    },
+    {
+      "concurrency": 4,
+      "n": 48,
+      "ok": 48,
+      "p50_ms": 31.5,
+      "p95_ms": 48.5,
+      "p99_ms": 51.1,
+      "throughput_rps": 119.22,
+      "wall_s": 0.4
+    },
+    {
+      "concurrency": 8,
+      "n": 48,
+      "ok": 48,
+      "p50_ms": 33.3,
+      "p95_ms": 57.2,
+      "p99_ms": 59.8,
+      "throughput_rps": 223.82,
+      "wall_s": 0.21
+    },
+    {
+      "concurrency": 16,
+      "n": 48,
+      "ok": 48,
+      "p50_ms": 63.4,
+      "p95_ms": 121.9,
+      "p99_ms": 170.7,
+      "throughput_rps": 225.99,
+      "wall_s": 0.21
+    },
+    {
+      "concurrency": 32,
+      "n": 48,
+      "ok": 48,
+      "p50_ms": 113.2,
+      "p95_ms": 150.4,
+      "p99_ms": 151.0,
+      "throughput_rps": 211.92,
+      "wall_s": 0.23
+    }
+  ]
+}
