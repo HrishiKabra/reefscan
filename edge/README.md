@@ -23,8 +23,11 @@ PYTHONPATH=. python -m edge.run_rung3           # Rung 3 — ONNX export + ONNX 
 PYTHONPATH=. python -m edge.run_rung3b          # Rung 3b — fp16 + int8 PTQ + TF32 control
 PYTHONPATH=. python -m edge.run_rung4           # Rung 4 — TensorRT fp16 + int8 (entropy calib) [GPU only]
 PYTHONPATH=. python -m edge.profile_trt         # Profiling — per-layer time of the TRT fp16 engine [GPU only]
+PYTHONPATH=. python -m edge.run_sweep           # Serving curve — batch sweep + cost/1k [GPU only]
 PYTHONPATH=. python -m edge.plot_pareto         # Pareto frontier -> edge/docs/pareto.png
 ```
+Production serving (Triton + dynamic batching + perf_analyzer): see [`edge/serving/`](serving/) —
+needs a GPU+Docker host; `run_sweep` is the Colab-runnable version of the same latency/throughput story.
 The Colab notebook `edge/colab/reefscan_edge.ipynb` runs the GPU rungs end-to-end (upload + Run all).
 `results.csv` is append-by-replace: re-running a rung overwrites its rows, never duplicates them.
 

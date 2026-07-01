@@ -33,3 +33,6 @@ wandb/
 
 # ReefScan-Edge exported model artifacts (large, reproducible)
 edge/artifacts/
+
+# Triton model repo engines (large, GPU/TRT-version specific)
+edge/serving/model_repository/**/*.plan

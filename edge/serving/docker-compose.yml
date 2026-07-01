@@ -1,0 +1,25 @@
+# Triton Inference Server for the ReefScan DINOv2-B TensorRT engine.
+# Requires an NVIDIA GPU + Docker + nvidia-container-toolkit on the host.
+# The Triton container's TensorRT version MUST match the version the engine was built with.
+# Engines here were built with TensorRT 10.5 (Rung 4) -> tritonserver:24.10-py3 ships TRT 10.5.
+services:
+  triton:
+    image: nvcr.io/nvidia/tritonserver:24.10-py3
+    command: >
+      tritonserver
+      --model-repository=/models
+      --log-verbose=1
+    ports:
+      - "8000:8000"   # HTTP
+      - "8001:8001"   # gRPC
+      - "8002:8002"   # Prometheus metrics
+    volumes:
+      - ./model_repository:/models
+    shm_size: "1g"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
