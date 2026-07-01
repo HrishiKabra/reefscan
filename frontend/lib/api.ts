@@ -11,11 +11,11 @@
 //   GET  /observability               -> Observability
 
 import {
-  labelsConfirmedThisCycle, mockInference, mockObservability, mockReefLocations,
+  labelsConfirmedThisCycle, mockInference, mockLoadTest, mockObservability, mockReefLocations,
   mockReviewQueue, mockSnapshots, RETRAIN_THRESHOLD,
 } from "./mock";
 import type {
-  HealthSnapshot, InferenceResponse, Observability, ReefLocation, ReviewItem,
+  HealthSnapshot, InferenceResponse, LoadTest, Observability, ReefLocation, ReviewItem,
 } from "./types";
 
 const API = process.env.NEXT_PUBLIC_REEFSCAN_API?.replace(/\/$/, "") || "";
@@ -82,6 +82,12 @@ export async function getSnapshots(reefId: string): Promise<HealthSnapshot[]> {
 export async function getObservability(): Promise<Observability> {
   if (!live) { await wait(300); return mockObservability; }
   return get<Observability>("/observability");
+}
+
+/** GET /loadtest — the committed serving load-test artifact (null if none on the backend). */
+export async function getLoadTest(): Promise<LoadTest | null> {
+  if (!live) { await wait(200); return mockLoadTest; }
+  try { return await get<LoadTest>("/loadtest"); } catch { return null; }
 }
 
 export { RETRAIN_THRESHOLD, labelsConfirmedThisCycle };

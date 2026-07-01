@@ -69,7 +69,11 @@ export interface HealthSnapshot {
 
 // ----- observability (Phase 7) -----
 export interface DriftPoint { date: string; avg_set_size: number; n: number }
-export interface LatencyPoint { date: string; p50: number; p95: number; n: number }
+export interface LatencyPoint { date: string; p50: number; p95: number; p99: number; n: number }
+export interface LatencySummary {
+  p50_ms: number; p95_ms: number; p99_ms: number;
+  throughput_rps: number; n: number; window_s: number;
+}
 export interface ClassDistribution {
   current: Record<string, number>;
   baseline: Record<string, number>;
@@ -79,8 +83,18 @@ export interface ClassDistribution {
 export interface Observability {
   drift: DriftPoint[];
   latency: LatencyPoint[];
+  latency_summary: LatencySummary;
   class_distribution: ClassDistribution;
   total_logs: number;
+}
+
+// load-test artifact (backend/loadtest.py -> docs/eval/loadtest.json -> GET /loadtest)
+export interface LoadTestLevel {
+  concurrency: number; n: number; ok: number;
+  p50_ms: number; p95_ms: number; p99_ms: number; throughput_rps: number; wall_s: number;
+}
+export interface LoadTest {
+  target: string; machine: string; stub: boolean; poll_s: number; levels: LoadTestLevel[];
 }
 
 export const CLASS_META: Record<CoralClass, { label: string; varName: string; short: string }> = {

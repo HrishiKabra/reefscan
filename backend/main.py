@@ -148,3 +148,14 @@ async def snapshots(reef_id: str) -> list[dict]:
 @app.get("/observability")
 async def get_observability() -> dict:
     return observability.build(supabase.recent_logs(), settings.classes)
+
+
+@app.get("/loadtest")
+async def get_loadtest() -> dict:
+    """The committed serving load-test artifact (backend/loadtest.py output). 404 if absent."""
+    import json
+    from pathlib import Path
+    for p in (Path("docs/eval/loadtest.json"), Path(__file__).resolve().parents[1] / "docs/eval/loadtest.json"):
+        if p.exists():
+            return json.loads(p.read_text())
+    raise HTTPException(status_code=404, detail="no loadtest artifact")

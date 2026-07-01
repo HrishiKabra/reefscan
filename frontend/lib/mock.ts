@@ -2,7 +2,7 @@
 // Phase 5 replaces lib/api.ts internals with real fetch() calls — these mocks stay for tests/storybook.
 
 import type {
-  HealthSnapshot, InferenceResponse, Observability, ReefLocation, ReviewItem, Segment,
+  HealthSnapshot, InferenceResponse, LoadTest, Observability, ReefLocation, ReviewItem, Segment,
 } from "./types";
 
 const NAT_W = 600;
@@ -135,14 +135,27 @@ export const mockObservability: Observability = {
     date, avg_set_size: +(1.06 + i * 0.03 + (i % 2 ? 0.01 : 0)).toFixed(3), n: 18 + (i % 4),
   })),
   latency: _obsDays(9).map((date, i) => ({
-    date, p50: 16800 + i * 250, p95: 23200 + i * 400, n: 18 + (i % 4),
+    date, p50: 16800 + i * 250, p95: 23200 + i * 400, p99: 26100 + i * 520, n: 18 + (i % 4),
   })),
+  latency_summary: { p50_ms: 18300, p95_ms: 26400, p99_ms: 30200, throughput_rps: 0.4, n: 252, window_s: 630 },
   class_distribution: {
     current: { healthy: 58.3, bleached: 41.7 },
     baseline: { healthy: 71.6, bleached: 28.4 },
     current_window: ["2026-06-21", "2026-06-27"],
     baseline_window: ["2026-06-14", "2026-06-20"],
   },
+};
+
+// mirrors docs/eval/loadtest.json (Apple Silicon CPU, stub backend) for the no-backend dev view
+export const mockLoadTest: LoadTest = {
+  target: "http://localhost:8000", machine: "Apple Silicon CPU (2 perf cores used)", stub: true, poll_s: 0.02,
+  levels: [
+    { concurrency: 1, n: 48, ok: 48, p50_ms: 28.8, p95_ms: 32.7, p99_ms: 34.3, throughput_rps: 34.75, wall_s: 1.38 },
+    { concurrency: 4, n: 48, ok: 48, p50_ms: 31.5, p95_ms: 48.5, p99_ms: 51.1, throughput_rps: 119.22, wall_s: 0.4 },
+    { concurrency: 8, n: 48, ok: 48, p50_ms: 33.3, p95_ms: 57.2, p99_ms: 59.8, throughput_rps: 223.82, wall_s: 0.21 },
+    { concurrency: 16, n: 48, ok: 48, p50_ms: 63.4, p95_ms: 121.9, p99_ms: 170.7, throughput_rps: 225.99, wall_s: 0.21 },
+    { concurrency: 32, n: 48, ok: 48, p50_ms: 113.2, p95_ms: 150.4, p99_ms: 151.0, throughput_rps: 211.92, wall_s: 0.23 },
+  ],
 };
 
 export const mockSnapshots: Record<string, HealthSnapshot[]> = {

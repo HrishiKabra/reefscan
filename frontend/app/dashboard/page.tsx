@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getObservability } from "@/lib/api";
-import type { Observability } from "@/lib/types";
+import { getObservability, getLoadTest } from "@/lib/api";
+import type { LoadTest, Observability } from "@/lib/types";
 import { TimeSeriesChart } from "@/components/TimeSeriesChart";
 import { SectionLabel, classColor } from "@/components/ui";
 
 export default function DashboardPage() {
   const [obs, setObs] = useState<Observability | null>(null);
-  useEffect(() => { getObservability().then(setObs); }, []);
+  const [lt, setLt] = useState<LoadTest | null>(null);
+  useEffect(() => { getObservability().then(setObs); getLoadTest().then(setLt); }, []);
 
   const drift = obs?.drift ?? [];
   const latency = obs?.latency ?? [];
@@ -18,7 +19,8 @@ export default function DashboardPage() {
   const driftFirst = drift[0]?.avg_set_size;
   const driftLast = drift[drift.length - 1]?.avg_set_size;
   const driftRising = driftFirst != null && driftLast != null && driftLast - driftFirst > 0.05;
-  const lastLat = latency[latency.length - 1];
+  const sum = obs?.latency_summary;
+  const secs = (ms?: number) => (ms == null ? "—" : `${(ms / 1000).toFixed(1)}s`);
 
   return (
     <div className="pt-6">
@@ -41,9 +43,10 @@ export default function DashboardPage() {
             <Metric label="mean set size (now)" value={driftLast?.toFixed(3) ?? "—"}
                     color={driftRising ? "var(--flag)" : "var(--healthy)"}
                     sub={driftRising ? "▲ rising — drift" : "stable"} />
-            <Metric label="latency p50" value={lastLat ? `${(lastLat.p50 / 1000).toFixed(1)}s` : "—"} />
-            <Metric label="latency p95" value={lastLat ? `${(lastLat.p95 / 1000).toFixed(1)}s` : "—"} color="var(--bleached)" />
-            <Metric label="logs analyzed" value={obs.total_logs.toLocaleString()} />
+            <Metric label="latency p50" value={secs(sum?.p50_ms)} sub={`${obs.total_logs.toLocaleString()} logs`} />
+            <Metric label="latency p95" value={secs(sum?.p95_ms)} color="var(--bleached)" />
+            <Metric label="latency p99" value={secs(sum?.p99_ms)} color="var(--flag)"
+                    sub={sum ? `${sum.throughput_rps.toFixed(2)} req/s` : undefined} />
           </div>
 
           <div className="rise panel mt-5 p-5 md:p-6" style={{ animationDelay: "0.1s" }}>
@@ -57,10 +60,11 @@ export default function DashboardPage() {
 
           <div className="rise panel mt-5 p-5 md:p-6" style={{ animationDelay: "0.14s" }}>
             <div className="mb-3 flex items-center justify-between">
-              <SectionLabel n="02">inference latency p50 / p95</SectionLabel>
+              <SectionLabel n="02">inference latency p50 / p95 / p99</SectionLabel>
               <div className="flex gap-4 font-mono text-[11.5px]">
                 <span style={{ color: "var(--cyan)" }}>● p50</span>
                 <span style={{ color: "var(--bleached)" }}>● p95</span>
+                <span style={{ color: "var(--flag)" }}>● p99</span>
               </div>
             </div>
             <TimeSeriesChart
@@ -68,6 +72,7 @@ export default function DashboardPage() {
               series={[
                 { label: "p50", color: "var(--cyan)", values: latency.map((d) => d.p50) },
                 { label: "p95", color: "var(--bleached)", values: latency.map((d) => d.p95) },
+                { label: "p99", color: "var(--flag)", values: latency.map((d) => d.p99) },
               ]}
               yMin={0}
               fmt={(n) => `${(n / 1000).toFixed(0)}s`}
@@ -80,8 +85,59 @@ export default function DashboardPage() {
               <ClassShift cd={cd} />
             </div>
           )}
+
+          {lt && (
+            <div className="rise panel mt-5 p-5 md:p-6" style={{ animationDelay: "0.22s" }}>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <SectionLabel n="04">serving load test · p50 / p95 / p99 vs concurrency</SectionLabel>
+                <span className="font-mono text-[11px] text-ink-dim">
+                  {lt.machine}{lt.stub ? " · stub" : ""} · {lt.poll_s}s poll
+                </span>
+              </div>
+              <LoadTestTable lt={lt} />
+            </div>
+          )}
         </>
       )}
+    </div>
+  );
+}
+
+function LoadTestTable({ lt }: { lt: LoadTest }) {
+  const maxTh = Math.max(...lt.levels.map((l) => l.throughput_rps), 1);
+  const cols = ["concurrency", "p50 ms", "p95 ms", "p99 ms", "throughput"];
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full font-mono text-[12.5px] tnum">
+        <thead>
+          <tr className="text-ink-dim">
+            {cols.map((c, i) => (
+              <th key={c} className={`pb-2 font-normal ${i === 0 ? "text-left" : "text-right"}`}>{c}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {lt.levels.map((l) => (
+            <tr key={l.concurrency} style={{ borderTop: "1px solid var(--line)" }}>
+              <td className="py-1.5 text-left text-ink">{l.concurrency}</td>
+              <td className="py-1.5 text-right" style={{ color: "var(--cyan)" }}>{l.p50_ms.toFixed(1)}</td>
+              <td className="py-1.5 text-right" style={{ color: "var(--bleached)" }}>{l.p95_ms.toFixed(1)}</td>
+              <td className="py-1.5 text-right" style={{ color: "var(--flag)" }}>{l.p99_ms.toFixed(1)}</td>
+              <td className="py-1.5">
+                <div className="flex items-center justify-end gap-2">
+                  <div className="h-1.5 w-16 overflow-hidden rounded-full" style={{ background: "var(--surface-inset)" }}>
+                    <div className="h-full rounded-full" style={{ width: `${(l.throughput_rps / maxTh) * 100}%`, background: "var(--healthy)" }} />
+                  </div>
+                  <span className="w-16 text-right text-ink">{l.throughput_rps.toFixed(0)} req/s</span>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-3 font-mono text-[11px] text-ink-dim">
+        p99 diverges from p50 as concurrency rises; throughput peaks then saturates (backward-bending).
+      </p>
     </div>
   );
 }
