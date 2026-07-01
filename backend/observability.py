@@ -1,15 +1,16 @@
-"""Observability aggregations over inference_logs. Phase 7.
+"""Observability aggregations over inference_logs. Phase 7 (+ serving metrics).
 
-Pure functions (testable) that turn raw inference_logs rows into the three dashboard views
+Pure functions (testable) that turn raw inference_logs rows into the dashboard views
 computed entirely from Supabase data — no external observability tool:
   - rolling mean prediction_set_size per day  -> drift proxy (rising = distribution shift)
-  - latency p50 / p95 per day
+  - latency p50 / p95 / p99 per day
+  - latency_summary: p50/p95/p99 + throughput (req/s) over the whole recent window
   - class distribution: current 7-day window vs the prior 7-day baseline
 """
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 
 def _day(ts) -> str:
@@ -39,8 +40,29 @@ def latency_percentiles(logs: list[dict]) -> list[dict]:
     by: dict[str, list[float]] = defaultdict(list)
     for r in logs:
         by[_day(r["ts"])].append(float(r.get("latency_ms", 0)))
-    return [{"date": d, "p50": _percentile(v, 50), "p95": _percentile(v, 95), "n": len(v)}
+    return [{"date": d, "p50": _percentile(v, 50), "p95": _percentile(v, 95),
+             "p99": _percentile(v, 99), "n": len(v)}
             for d, v in sorted(by.items())]
+
+
+def _parse_ts(ts) -> datetime | None:
+    try:
+        return datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
+
+
+def latency_summary(logs: list[dict]) -> dict:
+    """p50/p95/p99 + throughput (req/s) over the whole recent window. Percentiles are over the
+    window (not a running mean); throughput = requests / observed time-span."""
+    lat = [float(r.get("latency_ms", 0)) for r in logs]
+    tss = [t for t in (_parse_ts(r.get("ts")) for r in logs) if t is not None]
+    span_s = (max(tss) - min(tss)).total_seconds() if len(tss) >= 2 else 0.0
+    return {
+        "p50_ms": _percentile(lat, 50), "p95_ms": _percentile(lat, 95), "p99_ms": _percentile(lat, 99),
+        "throughput_rps": round(len(logs) / span_s, 3) if span_s > 0 else 0.0,
+        "n": len(logs), "window_s": round(span_s, 1),
+    }
 
 
 def class_distribution(logs: list[dict], classes: tuple[str, ...]) -> dict:
@@ -75,6 +97,7 @@ def build(logs: list[dict], classes: tuple[str, ...]) -> dict:
     return {
         "drift": rolling_set_size(logs),
         "latency": latency_percentiles(logs),
+        "latency_summary": latency_summary(logs),
         "class_distribution": class_distribution(logs, classes),
         "total_logs": len(logs),
     }

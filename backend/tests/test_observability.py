@@ -32,8 +32,20 @@ def test_rolling_set_size():
 
 def test_latency_percentiles():
     out = observability.latency_percentiles(_logs())
-    assert out[0]["p50"] <= out[0]["p95"]
-    assert out[1]["p95"] >= out[1]["p50"] >= 200
+    assert out[0]["p50"] <= out[0]["p95"] <= out[0]["p99"]
+    assert out[1]["p99"] >= out[1]["p95"] >= out[1]["p50"] >= 200
+
+
+def test_latency_summary():
+    # 100 requests over a 10s window -> ~10 req/s, p99 >= p50
+    tight = [{"ts": f"2026-06-27T10:00:{i % 10:02d}Z", "latency_ms": 100 + i} for i in range(100)]
+    s = observability.latency_summary(tight)
+    assert s["p50_ms"] <= s["p95_ms"] <= s["p99_ms"]
+    assert s["n"] == 100 and s["window_s"] == 9.0
+    assert abs(s["throughput_rps"] - 100 / 9.0) < 0.01
+    # empty logs must not divide by zero
+    empty = observability.latency_summary([])
+    assert empty["throughput_rps"] == 0.0 and empty["n"] == 0
 
 
 def test_class_distribution_windows():
@@ -44,8 +56,9 @@ def test_class_distribution_windows():
 
 def test_build_shape():
     o = observability.build(_logs(), CLASSES)
-    assert set(o) == {"drift", "latency", "class_distribution", "total_logs"}
+    assert set(o) == {"drift", "latency", "latency_summary", "class_distribution", "total_logs"}
     assert o["total_logs"] == 20
+    assert o["latency_summary"]["p99_ms"] >= o["latency_summary"]["p50_ms"]
 
 
 def test_read_endpoints_empty_without_supabase():
