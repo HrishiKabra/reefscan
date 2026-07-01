@@ -36,6 +36,11 @@ The Colab notebook `edge/colab/reefscan_edge.ipynb` runs the GPU rungs end-to-en
 - **TensorRT int8 recovers the collapse — proving the Rung-3b diagnosis.** ORT static int8 (MinMax)
   cratered to **0.3992** F1; TRT int8 with the **entropy calibrator** lands **0.884** (+0.48 absolute).
   It was the calibration method, not int8 itself — exactly what Rung 3b predicted.
+  - *The build log shows why*: TRT emits `Missing scale and zero-point for tensor ...norm... expect
+    fall back to non-int8` for every **LayerNorm** — i.e. it automatically keeps the norms in fp16 and
+    quantizes only the matmuls. That's the correct transformer-int8 recipe; ORT's naive
+    quantize-everything is precisely what broke. (Note: implicit `IInt8EntropyCalibrator2` is
+    deprecated in TRT 10.1+ in favor of explicit QDQ quantization — the modern path for future work.)
 - **But on the L4, int8 is *dominated* by fp16 — an honest "int8 isn't always worth it."** int8 is the
   same speed as fp16 (2.29 vs 2.24 ms; 903 vs 924 img/s) while giving up ~0.005 F1. On Ada the fp16
   tensor cores already saturate for a model this size, so int8's quant/dequant overhead buys nothing;

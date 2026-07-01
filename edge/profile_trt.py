@@ -46,9 +46,10 @@ def main():
     x = torch.randn(BATCH, 3, 224, 224, device="cuda")
     out = torch.empty(BATCH, 2, dtype=torch.float32, device="cuda")
     context.set_input_shape(in_name, (BATCH, 3, 224, 224))
-    context.set_tensor_address(in_name, int(x.data_ptr()))
-    context.set_tensor_address(out_name, int(out.data_ptr()))
-    stream = torch.cuda.current_stream().cuda_stream
+    # IProfiler is only reliable with the SYNCHRONOUS execute path (execute_v2 with a bindings
+    # list ordered by IO-tensor index); the async path can report nothing.
+    addr = {in_name: int(x.data_ptr()), out_name: int(out.data_ptr())}
+    bindings = [addr[engine.get_tensor_name(i)] for i in range(engine.num_io_tensors)]
 
     class LayerProfiler(trt.IProfiler):
         def __init__(self):
@@ -59,18 +60,21 @@ def main():
             self.times[layer_name] = self.times.get(layer_name, 0.0) + ms
 
     for _ in range(WARMUP):  # warmup WITHOUT profiler (autotune/alloc shouldn't pollute)
-        context.execute_async_v3(stream)
+        context.execute_v2(bindings)
     torch.cuda.synchronize()
 
     prof = LayerProfiler()
     context.profiler = prof
     for _ in range(ITERS):
-        context.execute_async_v3(stream)
+        context.execute_v2(bindings)
     torch.cuda.synchronize()
 
     per_iter = {k: v / ITERS for k, v in prof.times.items()}
     total = sum(per_iter.values())
     ranked = sorted(per_iter.items(), key=lambda kv: kv[1], reverse=True)
+    if not per_iter or total <= 0:
+        raise SystemExit("[profile] IProfiler returned no per-layer data on this build "
+                         "(engine may be a single fused block) — core results are unaffected.")
 
     print(f"[profile] TRT fp16 engine @ batch={BATCH}: {len(per_iter)} fused layers, "
           f"summed kernel time {total:.2f} ms/iter ({total / BATCH:.3f} ms/img)", flush=True)
