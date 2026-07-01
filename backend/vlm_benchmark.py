@@ -1,17 +1,21 @@
-"""VLM-vs-specialist benchmark. Phase 8.
+"""VLM-vs-specialist benchmark. Phase 8 (+ self-hosted via vLLM).
 
-Zero-shots a frontier VLM (OpenAI GPT-4o by default) on the SAME NOAA test split the
-specialist is evaluated on, and compares accuracy + calibration. To keep it cheap and
-rigorous:
-  - images sent at `detail: low` (flat 85 tokens each — coral patches are 224px)
+Zero-shots a frontier VLM on the SAME NOAA test split the specialist is evaluated on, and
+compares accuracy + calibration. Works against ANY OpenAI-compatible endpoint:
+  - OpenAI GPT-4o (default), or a self-hosted vLLM server via --base-url http://localhost:8000/v1
+To keep it cheap and rigorous:
+  - images sent at `detail: low` (flat 85 tokens on OpenAI; ignored by vLLM, which sees the
+    native-resolution PNG — coral patches are already 224px crops, so NOTHING is downscaled)
   - forced binary choice ("A"=healthy / "B"=bleached), max_tokens=1, temperature=0
-  - logprobs of the A/B tokens → a real probability (so we can measure the VLM's ECE,
-    not just accuracy)
+  - logprobs of the A/B tokens → a real probability (so we can measure the VLM's ECE)
   - results streamed to a JSONL so a crash never re-bills and runs are resumable
 
-Compares against docs/eval/metrics.json (the specialist) and writes docs/eval/vlm_benchmark.json.
+Compares against docs/eval/metrics.json (the specialist) and writes
+docs/eval/vlm_benchmark_<model>.json (per-model, so GPT-4o and Qwen results coexist).
 
 Run:  python -m backend.vlm_benchmark [--model gpt-4o] [--limit N] [--workers 6]
+      python -m backend.vlm_benchmark --model Qwen/Qwen2.5-VL-7B-Instruct \\
+          --base-url http://localhost:8000/v1 --api-key EMPTY --workers 16
 """
 from __future__ import annotations
 
@@ -112,14 +116,18 @@ def main():
     ap.add_argument("--model", default="gpt-4o")
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--workers", type=int, default=6)
+    ap.add_argument("--base-url", default=None, help="OpenAI-compatible endpoint (e.g. a local vLLM server)")
+    ap.add_argument("--api-key", default=None, help="defaults to $OPENAI_API_KEY; use 'EMPTY' for local vLLM")
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    key = a.api_key or os.environ.get("OPENAI_API_KEY", "EMPTY")
+    client = OpenAI(api_key=key, base_url=a.base_url) if a.base_url else OpenAI(api_key=key)
 
+    safe = a.model.replace("/", "_")  # Qwen/Qwen2.5-VL-... -> a valid filename
     items = _load_test()
     if a.limit:
         items = items[:a.limit]
-    jsonl = OUT / f"vlm_preds_{a.model}.jsonl"
+    jsonl = OUT / f"vlm_preds_{safe}.jsonl"
     done = {}
     if jsonl.exists():
         for line in jsonl.read_text().splitlines():
@@ -181,12 +189,12 @@ def main():
     if spec_path.exists():
         spec = json.loads(spec_path.read_text())
         out["specialist"] = {"accuracy": spec["accuracy"], "macro_f1": spec["macro_f1"], "ece": spec.get("ece")}
-    (OUT / "vlm_benchmark.json").write_text(json.dumps(out, indent=2))
+    (OUT / f"vlm_benchmark_{safe}.json").write_text(json.dumps(out, indent=2))
     print(f"\n[vlm] {a.model}: acc={acc:.4f} macroF1={out['macro_f1']:.4f} ECE={out['ece']:.4f} (n={len(results)})")
     if "specialist" in out:
         print(f"[vlm] specialist: acc={out['specialist']['accuracy']:.4f} "
               f"macroF1={out['specialist']['macro_f1']:.4f}")
-    print("[vlm] wrote docs/eval/vlm_benchmark.json")
+    print(f"[vlm] wrote docs/eval/vlm_benchmark_{safe}.json")
 
 
 if __name__ == "__main__":
