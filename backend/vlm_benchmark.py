@@ -123,6 +123,17 @@ def main():
     key = a.api_key or os.environ.get("OPENAI_API_KEY", "EMPTY")
     client = OpenAI(api_key=key, base_url=a.base_url) if a.base_url else OpenAI(api_key=key)
 
+    # preflight: fail fast + clearly if the endpoint is unreachable (e.g. a not-yet-up vLLM server)
+    # instead of grinding through every image with connection errors.
+    try:
+        client.models.list()
+    except Exception as e:  # noqa: BLE001
+        where = a.base_url or "the OpenAI API"
+        raise SystemExit(
+            f"[vlm] cannot reach {where}: {type(e).__name__}: {str(e)[:160]}\n"
+            f"      -> is the server up? For vLLM: check logs/vllm.log and "
+            f"`curl {(a.base_url or '').rstrip('/')}/models`")
+
     safe = a.model.replace("/", "_")  # Qwen/Qwen2.5-VL-... -> a valid filename
     items = _load_test()
     if a.limit:
