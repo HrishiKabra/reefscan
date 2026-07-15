@@ -189,10 +189,12 @@ hand-written CUDA kernel. Rationale for the non-obvious calls is in [`DECISIONS.
   `/infer` submit→poll→complete path at rising concurrency. Measured (Apple-Silicon CPU, stub backend):
   **p99 34 → 171 ms**, widest **p99/p50 gap 2.7× at concurrency 16**, throughput peaking ~226 req/s then
   saturating. Surfaced on `/dashboard`, labeled with the concurrency it was measured at.
-- **Fused CUDA preprocessing kernel** (`notebooks/serving_inference.ipynb`, Part B). One kernel fuses
+- **Fused CUDA preprocessing kernel** (`notebooks/serving_B_cuda_kernel.ipynb`, Part B). One kernel fuses
   `uint8 HWC → float32 NCHW → ImageNet-normalize` (4 memory passes → 1). Profiled *first* to state
   preprocessing's latency share, `torch.allclose`-verified against the multi-op torch tail, then
-  benchmarked vs it. Honest: bandwidth-bound, small end-to-end win, real kernel-authoring demo.
+  benchmarked vs it. Measured (**A100-80GB**): **2.14× faster** (0.131 → 0.061 ms/batch-32), **392 GB/s**,
+  matches to **7e-7**; preprocessing is **0.8%** of the classify step (DINOv2 fwd 14.1 ms), less e2e.
+  Honest: bandwidth-bound, small end-to-end win, real kernel-authoring demo.
 - **Self-hosted VLM baseline** (Part C). **Qwen2.5-VL-7B** served with vLLM (OpenAI-compatible) re-runs the
   VLM benchmark on the same NOAA test split — a $0, reproducible open-model column **added next to** the
   GPT-4o one: `DINOv2 specialist vs GPT-4o vs Qwen2.5-VL` on accuracy / macro-F1 / ECE.
