@@ -9,8 +9,12 @@ Runs on a GPU + C++ toolchain box (the RunPod box from [`../serving/RUNPOD.md`](
 **TensorRT 10.5** to match the existing engine (`tritonserver:24.10-py3`), or rebuild the engine there.
 
 ## Status
-- **Phase 0 — TRT C++ path** ✅ code. `trt_engine.{h,cpp}` (deserialize → pinned buffers → `enqueueV3`)
-  + `reefscan_infer` batch-1 binary. **Gate: logit parity vs the Python TRT path** (below).
+- **Phase 0 — TRT C++ path** ✅ **GATE PASSED.** `trt_engine.{h,cpp}` (deserialize → pinned buffers →
+  `enqueueV3`) + `reefscan_infer` batch-1 binary. Verified on a **RunPod RTX A6000 (secure)**,
+  `nvcr.io/nvidia/pytorch:24.10-py3` (CUDA 12.6, **TensorRT 10.5**, GNU 11.4), engine built on-box:
+  the C++ compiled clean and reproduced the Python-TRT logits **bit-for-bit** —
+  `max|py − cpp| = 0.00e+00`, argmax **128/128**. (Batch-1 C++ path: 2.56 ms/img incl. H2D/D2H+sync;
+  the real serving curve is the Phase-2 sweep.)
 - Phase 1 batching queue · Phase 2 server + sweep · Phase 3 promoted kernel · Phase 4 stretch — TODO.
 
 ## Build (on the box, TensorRT 10.5)
