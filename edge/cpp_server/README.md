@@ -15,7 +15,13 @@ Runs on a GPU + C++ toolchain box (the RunPod box from [`../serving/RUNPOD.md`](
   the C++ compiled clean and reproduced the Python-TRT logits **bit-for-bit** —
   `max|py − cpp| = 0.00e+00`, argmax **128/128**. (Batch-1 C++ path: 2.56 ms/img incl. H2D/D2H+sync;
   the real serving curve is the Phase-2 sweep.)
-- Phase 1 batching queue · Phase 2 server + sweep · Phase 3 promoted kernel · Phase 4 stretch — TODO.
+- **Phase 1 — batching queue** ✅ **GATE PASSED.** `batch_queue.{h,cpp}` (bounded MPMC deque + condvars +
+  one scheduler thread coalescing to `max_batch`/`max_delay_us`) + `reefscan_batch_test`. Verified on a
+  **RunPod A40 (secure)**: 128 images from **64–128 concurrent producer threads**, **no deadlock**, and
+  **argmax 128/128** vs the batch-1 reference in both configs (batched fp16 differs from batch-1 only in
+  the low bits — `max|Δ|` up to 6.2e-2 at batch-32, exactly 0 at batch-8 — predictions identical).
+  ~**1.1–1.2k req/s** through the queue.
+- Phase 2 server + sweep · Phase 3 promoted kernel · Phase 4 stretch — TODO.
 
 ## Build (on the box, TensorRT 10.5)
 ```bash
