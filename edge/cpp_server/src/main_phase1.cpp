@@ -6,6 +6,7 @@
 //
 // argmax must match the reference 100% (batched fp16 may differ from batch-1 in the low bits, so we
 // tolerate a small logit delta but require identical predictions).
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cmath>
