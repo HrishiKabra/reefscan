@@ -18,6 +18,18 @@ optimizing, keep the comparisons fair, and don't fake infrastructure that can't 
   kernel, so it's not the thing we're improving on. The fair baseline is the naive multi-op sequence a
   typical pipeline actually writes.
 
+## The Qwen result is real (0.43), not a bug — and I verified that
+Qwen2.5-VL-7B scores **0.433 acc / 0.302 macro-F1** — *below random*. That's suspicious for a capable
+7B VLM, so I didn't report it until I ruled out the two ways it could be an artifact:
+- **Vision pipeline:** a white/green sanity probe returned "White" / "Green" — Qwen *is* seeing the
+  images. (This also cleared my own rope-config patch of blame.)
+- **Answer parsing:** the original `max_tokens=1` read only the first token as the A/B answer, which
+  biases models (like Qwen) that emit a leading space/word. I made the parse robust (scan the short
+  answer for the letter; neutral 0.5 when unparseable) — the score barely moved (0.45 → 0.43), which
+  *confirms* it wasn't a parsing artifact.
+So 0.43 is genuine: Qwen sees the coral but systematically over-calls "bleached" (underwater color-cast
+makes pale healthy coral read as bleached to a generalist). Reported with that interpretation, not buried.
+
 ## GPT-4o stays as a column; Qwen2.5-VL is *added*
 - The VLM benchmark's job is to show the fine-tuned specialist beats generalist VLMs. GPT-4o is the
   recognizable frontier baseline; deleting it to swap in Qwen would weaken the story.

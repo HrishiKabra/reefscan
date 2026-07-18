@@ -195,11 +195,23 @@ hand-written CUDA kernel. Rationale for the non-obvious calls is in [`DECISIONS.
   benchmarked vs it. Measured (**A100-80GB**): **2.14× faster** (0.131 → 0.061 ms/batch-32), **392 GB/s**,
   matches to **7e-7**; preprocessing is **0.8%** of the classify step (DINOv2 fwd 14.1 ms), less e2e.
   Honest: bandwidth-bound, small end-to-end win, real kernel-authoring demo.
-- **Self-hosted VLM baseline** (Part C). **Qwen2.5-VL-7B** served with vLLM (OpenAI-compatible) re-runs the
-  VLM benchmark on the same NOAA test split — a $0, reproducible open-model column **added next to** the
-  GPT-4o one: `DINOv2 specialist vs GPT-4o vs Qwen2.5-VL` on accuracy / macro-F1 / ECE.
-- **vLLM serving sweep** (Part D). Concurrency 1→32 → p50/p95/p99 latency + throughput curve for the
-  self-hosted 7B VLM.
+- **Self-hosted VLM baseline** (Part C). **Qwen2.5-VL-7B** served with vLLM (OpenAI-compatible, L4) re-runs
+  the VLM benchmark on the same NOAA test split — a $0, reproducible open-model column **next to** GPT-4o:
+
+  | model | accuracy | macro-F1 | ECE |
+  |---|---:|---:|---:|
+  | **DINOv2-B specialist** (90M, fine-tuned) | **0.895** | **0.887** | **0.046** |
+  | GPT-4o (zero-shot) | 0.805 | 0.790 | 0.152 |
+  | Qwen2.5-VL-7B (self-hosted, zero-shot) | 0.433 | 0.302 | 0.342 |
+
+  The 90M specialist beats a frontier API model *and* a 7B open VLM — the latter **below random**. Qwen
+  demonstrably *sees* the images (a white/green sanity check passed) but systematically over-calls
+  "bleached", conflating the underwater color-cast on pale healthy coral with bleaching — the domain
+  judgment a fine-tuned specialist has and a generalist doesn't. The sharpest form of "specialists beat
+  generalists on niche vision."
+- **vLLM serving sweep** (Part D, L4). Concurrency 1→32: p50 **72 → 255 ms**, p99 **132 → 303 ms**,
+  throughput **14 → 98 req/s** (saturating) — the serving curve for the self-hosted 7B VLM
+  ([`docs/eval/vllm_serving_sweep.png`](docs/eval/vllm_serving_sweep.png)).
 - **Triton (production path).** [`edge/serving/`](edge/serving/) has the `config.pbtxt` (dynamic batching)
   + `docker-compose.yml`; [`edge/serving/RUNPOD.md`](edge/serving/RUNPOD.md) is the turnkey way to run it on
   a real GPU+Docker box with `perf_analyzer` (~15 min, <$1) — deferred there rather than hacked into Colab,

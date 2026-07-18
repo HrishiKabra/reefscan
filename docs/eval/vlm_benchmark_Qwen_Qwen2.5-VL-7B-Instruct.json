@@ -1,0 +1,15 @@
+{
+  "model": "Qwen/Qwen2.5-VL-7B-Instruct",
+  "n": 300,
+  "served_by": "vLLM 0.10.2 (self-hosted, L4)",
+  "accuracy": 0.4333,
+  "macro_f1": 0.3023,
+  "ece": 0.3423,
+  "vision_check": "WHITE->White, GREEN->Green (sees images correctly)",
+  "note": "below random: systematically over-calls 'bleached' (underwater color-cast on pale healthy coral); genuine, reproduced across two runs after a fair A/B parse",
+  "specialist": {
+    "accuracy": 0.8952,
+    "macro_f1": 0.8874,
+    "ece": 0.0459
+  }
+}
