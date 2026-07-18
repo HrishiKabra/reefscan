@@ -68,11 +68,17 @@ def _load_test() -> list[tuple[bytes, int]]:
     return items
 
 
-def classify_one(client, model, img_bytes) -> tuple[int, float]:
-    """Return (pred_idx, p_healthy) for one image via forced A/B + logprobs."""
+def classify_one(client, model, img_bytes, max_tokens: int = 5) -> tuple[int, float]:
+    """Return (pred_idx, p_healthy) for one image via forced A/B.
+
+    Calibrated path: if A/B are in the FIRST token's top-logprobs, derive p_healthy from them.
+    Robust fallback (models like Qwen often emit a leading space/word before the letter, so the
+    first token isn't A/B): scan the whole short answer for the first standalone A/B; neutral 0.5
+    when genuinely unparseable, so an unreadable answer never biases toward one class.
+    """
     b64 = base64.b64encode(img_bytes).decode()
     resp = client.chat.completions.create(
-        model=model, max_tokens=1, temperature=0, logprobs=True, top_logprobs=12,
+        model=model, max_tokens=max_tokens, temperature=0, logprobs=True, top_logprobs=12,
         messages=[{"role": "user", "content": [
             {"type": "text", "text": PROMPT},
             {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}", "detail": "low"}},
@@ -92,9 +98,10 @@ def classify_one(client, model, img_bytes) -> tuple[int, float]:
     if lp_a is not None and lp_b is not None:
         ea, eb = math.exp(lp_a), math.exp(lp_b)
         p_healthy = ea / (ea + eb)
-    else:  # fallback: hard label from the text, no calibrated prob
-        letter = (choice.message.content or "").strip().upper()[:1]
-        p_healthy = 0.9 if letter == "A" else 0.1
+    else:  # scan the full short answer for the first A/B; 0.5 if neither (neutral, unbiased)
+        text = (choice.message.content or "").upper()
+        letter = next((ch for ch in text if ch in "AB"), "")
+        p_healthy = 0.9 if letter == "A" else (0.1 if letter == "B" else 0.5)
     return (0 if p_healthy >= 0.5 else 1), float(p_healthy)
 
 
