@@ -43,6 +43,14 @@ target_include_directories(reefscan_server PRIVATE third_party)
 target_link_libraries(reefscan_server PRIVATE batch_queue)
 
 # Phase 3: the fused preprocessing kernel + its correctness gate (needs the CUDA compiler).
+# Set an arch default + nvcc path so enable_language(CUDA) doesn't fail on arch auto-detect
+# (CMake 3.30 is strict). Ampere (80/86) + Ada (89) cover A100/A6000/A40/L4/A4000.
+if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+  set(CMAKE_CUDA_ARCHITECTURES 80 86 89)
+endif()
+if(NOT DEFINED CMAKE_CUDA_COMPILER AND EXISTS /usr/local/cuda/bin/nvcc)
+  set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
+endif()
 enable_language(CUDA)
 add_library(preproc_kernel kernels/preproc_kernel.cu)
 target_include_directories(preproc_kernel PUBLIC include)
