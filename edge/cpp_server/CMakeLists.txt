@@ -36,4 +36,17 @@ target_link_libraries(batch_queue PUBLIC trt_engine Threads::Threads)
 add_executable(reefscan_batch_test src/main_phase1.cpp)
 target_link_libraries(reefscan_batch_test PRIVATE batch_queue)
 
-# Phases 2-3 (server, kernels) register their targets here as they land.
+# Phase 2: cpp-httplib HTTP server over the queue (httplib.h is a single header fetched into
+# third_party/ by the build script — see README).
+add_executable(reefscan_server src/server.cpp)
+target_include_directories(reefscan_server PRIVATE third_party)
+target_link_libraries(reefscan_server PRIVATE batch_queue)
+
+# Phase 3: the fused preprocessing kernel + its correctness gate (needs the CUDA compiler).
+enable_language(CUDA)
+add_library(preproc_kernel kernels/preproc_kernel.cu)
+target_include_directories(preproc_kernel PUBLIC include)
+target_link_libraries(preproc_kernel PUBLIC CUDA::cudart)
+
+add_executable(reefscan_kernel_test kernels/test_kernel.cpp)
+target_link_libraries(reefscan_kernel_test PRIVATE preproc_kernel CUDA::cudart)

@@ -2,3 +2,4 @@ build/
 _parity/
 *.plan
 *.engine
+third_party/httplib.h
