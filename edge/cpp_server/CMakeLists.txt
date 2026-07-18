@@ -28,4 +28,12 @@ target_link_libraries(trt_engine PUBLIC ${TRT_NVINFER} CUDA::cudart)
 add_executable(reefscan_infer src/main_phase0.cpp)
 target_link_libraries(reefscan_infer PRIVATE trt_engine)
 
-# Phases 1-3 (batch_queue, server, kernels) register their targets here as they land.
+# Phase 1: the dynamic-batching queue + its concurrency gate.
+find_package(Threads REQUIRED)
+add_library(batch_queue src/batch_queue.cpp)
+target_link_libraries(batch_queue PUBLIC trt_engine Threads::Threads)
+
+add_executable(reefscan_batch_test src/main_phase1.cpp)
+target_link_libraries(reefscan_batch_test PRIVATE batch_queue)
+
+# Phases 2-3 (server, kernels) register their targets here as they land.
