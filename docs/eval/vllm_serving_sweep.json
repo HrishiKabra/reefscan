@@ -1,0 +1,41 @@
+{
+  "gpu": "NVIDIA L4",
+  "model": "Qwen/Qwen2.5-VL-7B-Instruct",
+  "rows": [
+    {
+      "concurrency": 1,
+      "p50": 73.1,
+      "p95": 75.1,
+      "p99": 129.5,
+      "throughput": 13.25
+    },
+    {
+      "concurrency": 4,
+      "p50": 121.2,
+      "p95": 139.7,
+      "p99": 151.5,
+      "throughput": 32.14
+    },
+    {
+      "concurrency": 8,
+      "p50": 120.3,
+      "p95": 172.0,
+      "p99": 180.1,
+      "throughput": 60.79
+    },
+    {
+      "concurrency": 16,
+      "p50": 187.1,
+      "p95": 213.4,
+      "p99": 223.5,
+      "throughput": 79.63
+    },
+    {
+      "concurrency": 32,
+      "p50": 255.9,
+      "p95": 293.8,
+      "p99": 307.0,
+      "throughput": 97.05
+    }
+  ]
+}
