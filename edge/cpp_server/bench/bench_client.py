@@ -22,9 +22,13 @@ import httpx
 import numpy as np
 
 from edge.data import load_test
-from edge.harness import _percentile, append_results
+from edge.harness import append_results
 
 SWEEP = [1, 8, 16, 32, 64]
+
+
+def _pct(v, p):
+    return round(float(np.percentile(v, p)), 2) if len(v) else 0.0
 
 
 async def _infer(cl: httpx.AsyncClient, url: str, body: bytes) -> np.ndarray:
@@ -89,8 +93,8 @@ async def amain(a):
         t0 = time.perf_counter()
         _, lat = await _bounded(a.url, sub, concurrency=c, timed=True)
         wall = time.perf_counter() - t0
-        row = {"concurrency": c, "p50_ms": _percentile(lat, 50), "p95_ms": _percentile(lat, 95),
-               "p99_ms": _percentile(lat, 99), "throughput_ips": round(N / wall, 1)}
+        row = {"concurrency": c, "p50_ms": _pct(lat, 50), "p95_ms": _pct(lat, 95),
+               "p99_ms": _pct(lat, 99), "throughput_ips": round(N / wall, 1)}
         rows.append(row)
         print(f"    {c:>4} {row['p50_ms']:>8.2f} {row['p95_ms']:>8.2f} {row['p99_ms']:>8.2f} "
               f"{row['throughput_ips']:>9.1f}", flush=True)
