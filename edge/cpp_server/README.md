@@ -21,7 +21,22 @@ Runs on a GPU + C++ toolchain box (the RunPod box from [`../serving/RUNPOD.md`](
   **argmax 128/128** vs the batch-1 reference in both configs (batched fp16 differs from batch-1 only in
   the low bits — `max|Δ|` up to 6.2e-2 at batch-32, exactly 0 at batch-8 — predictions identical).
   ~**1.1–1.2k req/s** through the queue.
-- Phase 2 server + sweep · Phase 3 promoted kernel · Phase 4 stretch — TODO.
+- **Phase 2 — HTTP server + sweep** ✅ **GATE PASSED** (A6000). `server.cpp` (cpp-httplib) + the
+  concurrency sweep. **F1 parity holds: 0.8887 vs the `tensorrt fp16` row's 0.8888** (same engine → a
+  bug check, not a new number). Serving sweep 1→64: throughput peaks **~282 req/s @ conc 32** then
+  saturates, p99 52→545 ms. `cpp-trt` rows are in `edge/results.csv` / `RESULTS.md`.
+  - *Honest read:* those latency columns are **end-to-end HTTP** (network + a **Python httpx** client +
+    the 1 ms batch window + TRT), so they're ~20× the in-process `tensorrt fp16` rows (2–37 ms) and the
+    throughput is client-bound, not server-bound — the async Python client can't drive the server hard.
+    A C++ client / `perf_analyzer` would push it far higher. The row proves **correctness + servability**
+    in the same table; it's not a like-for-like latency race with the raw-compute rows (see `DECISIONS.md`).
+- **Phase 3 — promoted kernel** ✅ **GATE PASSED.** `kernels/preproc_kernel.cu` + `test_kernel`:
+  `max|gpu − cpu ref| = 0.00e+00` vs the naive multi-op reference (< 1e-5 gate).
+- Phase 4 stretch (lock-free queue / CUDA graphs / pinned pool) — documented as measured-future-work
+  in `DECISIONS.md`.
+
+**All Phase 0–3 gates verified on RunPod (A6000/A40, `nvcr.io/nvidia/pytorch:24.10-py3`, TRT 10.5),
+driven end-to-end over SSH.**
 
 ## Build (on the box, TensorRT 10.5)
 ```bash

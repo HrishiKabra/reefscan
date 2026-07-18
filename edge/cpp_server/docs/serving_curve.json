@@ -1,0 +1,41 @@
+{
+  "gpu": "NVIDIA RTX A6000",
+  "server": "cpp-trt (hand-written queue)",
+  "rows": [
+    {
+      "concurrency": 1,
+      "p50_ms": 47.97,
+      "p95_ms": 51.95,
+      "p99_ms": 52.23,
+      "throughput_ips": 20.8
+    },
+    {
+      "concurrency": 8,
+      "p50_ms": 51.76,
+      "p95_ms": 56.95,
+      "p99_ms": 60.44,
+      "throughput_ips": 150.7
+    },
+    {
+      "concurrency": 16,
+      "p50_ms": 54.43,
+      "p95_ms": 72.83,
+      "p99_ms": 201.91,
+      "throughput_ips": 245.8
+    },
+    {
+      "concurrency": 32,
+      "p50_ms": 81.91,
+      "p95_ms": 232.96,
+      "p99_ms": 332.72,
+      "throughput_ips": 282.4
+    },
+    {
+      "concurrency": 64,
+      "p50_ms": 147.94,
+      "p95_ms": 538.46,
+      "p99_ms": 544.54,
+      "throughput_ips": 273.1
+    }
+  ]
+}
