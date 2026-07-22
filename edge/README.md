@@ -1,5 +1,9 @@
 # ReefScan-Edge — inference optimization
 
+> **New here? Start with [`PORTFOLIO.md`](PORTFOLIO.md)** — the complete v2 narrative (this ladder +
+> the hand-written C++/TensorRT server + the Triton head-to-head + QAT int8) with résumé bullets.
+> This file is the ladder's detailed reference.
+
 An optimization ladder over the trained DINOv2-B coral classifier: map the full
 **accuracy–latency frontier** across runtimes (PyTorch → torch.compile → ONNX Runtime →
 TensorRT fp16/int8 → Triton) on the **same 1,565-image held-out test set**. Full plan:
