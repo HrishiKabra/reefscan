@@ -66,6 +66,17 @@ def load_test() -> tuple[torch.Tensor, np.ndarray]:
     return _to_tensor(_items("test"))
 
 
+def load_train() -> tuple[torch.Tensor, np.ndarray]:
+    """The 7,292-image native train split — used ONLY by QAT (run_qat.py) to fine-tune with
+    fake-quant nodes. Same resize-224 + ImageNet-norm transform as everything else."""
+    return _to_tensor(_items("train"))
+
+
+def load_val() -> tuple[torch.Tensor, np.ndarray]:
+    """The 1,562-image native val split — QAT best-checkpoint selection (never the test set)."""
+    return _to_tensor(_items("val"))
+
+
 def load_calibration(n: int = 400) -> torch.Tensor:
     """Representative train subsample for int8 calibration (NOT random data — invariant #3).
     Strided sampling spans the full train set (both classes)."""
