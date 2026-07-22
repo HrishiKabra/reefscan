@@ -25,5 +25,12 @@ Batch-1 and batched rows are separate (never conflated).
 | tensorrt | int8 | cuda | 32 | 35.40 | 36.69 | 37.14 | 903.5 | 380 | 0.8840 | 0.8920 |
 | cpp-trt † | fp16 | cuda | 1 | 3.61 | 4.16 | 4.81 | 274.5 | — | 0.8881 | 0.8958 |
 | cpp-trt † | fp16 | cuda | 32 | 26.08 | 31.47 | 33.20 | 1240.8 | — | 0.8881 | 0.8958 |
+| triton † | fp16 | cuda | 1 | 5.01 | 5.49 | 5.82 | 199.4 | — | 0.8881 | 0.8958 |
+| triton † | fp16 | cuda | 32 | 21.14 | 27.16 | 31.01 | 1489.6 | — | 0.8881 | 0.8958 |
 
-† **cpp-trt** = the hand-written C++ server (`edge/cpp_server/`), measured with the **native C++ load client**. Latency is **end-to-end HTTP** (network + dynamic-batch queue + TensorRT) and the `batch` column is **client concurrency** (the server batches internally), so these rows aren't directly comparable to the in-process runtime rows above (e.g. tensorrt fp16's 2.24 ms is bare kernel time). It peaks **~1.3k req/s** and does **3.6 ms p50 @ concurrency-1** (after a `TCP_NODELAY` fix that removed a ~40 ms Nagle stall). See `edge/cpp_server/DECISIONS.md`.
+† **Server rows** (`cpp-trt`, `triton`) are measured **end-to-end with a native C++ load client**, and their `batch` column is **client concurrency** (the server coalesces batch-1 requests internally), so they are **not** directly comparable to the in-process runtime rows above (e.g. `tensorrt fp16`'s 2.24 ms is bare kernel time). Both serve the **same fp16 engine** on the same A6000, so their macro-F1 matches `tensorrt fp16` by construction — the comparison is about the **serving stack**, not the model.
+
+- **cpp-trt** = the hand-written C++ server (`edge/cpp_server/`), native C++ load client. **3.6 ms p50 @ concurrency-1** (after a `TCP_NODELAY` fix that removed a ~40 ms Nagle stall). See `edge/cpp_server/DECISIONS.md`.
+- **triton** = stock NVIDIA Triton 2.51.0 (`tensorrt_plan` backend, `dynamic_batching` pref 8/16/32 @ 1 ms), measured with the official **`perf_analyzer`** (native C++ gRPC client). Full 1→64 curve: `edge/serving/docs/perf_analyzer.csv`; reproduce via `edge/serving/RUNPOD.md`.
+
+**Honest crossover:** the hand-written server **wins at concurrency-1** (3.6 vs 5.0 ms p50 — no gRPC framing, no forced queue-delay wait), while Triton **wins under load** (1490 vs 1240 img/s and *lower* p50 at concurrency-32) — its mature dynamic batcher amortizes better, and its curve keeps climbing to ~1.68k img/s at concurrency-64. perf_analyzer's server-side breakdown attributes the concurrency-1 gap to ~1.2 ms queue-delay + ~1.1 ms gRPC on top of the ~2.2 ms fp16 kernel.

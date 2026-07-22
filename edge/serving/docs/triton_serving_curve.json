@@ -1,0 +1,67 @@
+{
+  "gpu": "NVIDIA RTX A6000",
+  "server": "triton 2.51.0 (tensorrt_plan, dynamic_batching pref 8/16/32, 1ms queue delay)",
+  "client": "perf_analyzer 2.51.0 (native C++, gRPC)",
+  "engine": "fp16 TensorRT (trtexec, min1/opt32/max64) \u2014 same engine as tensorrt-fp16 / cpp-trt",
+  "measurement": "5s window per concurrency, --percentile 95",
+  "macro_f1": 0.8881,
+  "accuracy": 0.8958,
+  "n_test": 1565,
+  "rows": [
+    {
+      "concurrency": 1,
+      "throughput_ips": 199.4,
+      "p50_ms": 5.01,
+      "p90_ms": 5.36,
+      "p95_ms": 5.49,
+      "p99_ms": 5.82,
+      "server_queue_us": 1156,
+      "server_compute_infer_us": 2167,
+      "grpc_net_us": 1096
+    },
+    {
+      "concurrency": 8,
+      "throughput_ips": 1130.3,
+      "p50_ms": 6.77,
+      "p90_ms": 7.61,
+      "p95_ms": 8.4,
+      "p99_ms": 9.82,
+      "server_queue_us": 1618,
+      "server_compute_infer_us": 2318,
+      "grpc_net_us": 1748
+    },
+    {
+      "concurrency": 16,
+      "throughput_ips": 1369.6,
+      "p50_ms": 11.53,
+      "p90_ms": 13.48,
+      "p95_ms": 14.46,
+      "p99_ms": 16.14,
+      "server_queue_us": 3196,
+      "server_compute_infer_us": 3742,
+      "grpc_net_us": 2363
+    },
+    {
+      "concurrency": 32,
+      "throughput_ips": 1489.6,
+      "p50_ms": 21.14,
+      "p90_ms": 25.93,
+      "p95_ms": 27.16,
+      "p99_ms": 31.01,
+      "server_queue_us": 4880,
+      "server_compute_infer_us": 8649,
+      "grpc_net_us": 3304
+    },
+    {
+      "concurrency": 64,
+      "throughput_ips": 1678.9,
+      "p50_ms": 37.01,
+      "p90_ms": 43.67,
+      "p95_ms": 45.98,
+      "p99_ms": 51.82,
+      "server_queue_us": 10163,
+      "server_compute_infer_us": 14244,
+      "grpc_net_us": 4106
+    }
+  ]
+}
