@@ -42,6 +42,11 @@ add_executable(reefscan_server src/server.cpp)
 target_include_directories(reefscan_server PRIVATE third_party)
 target_link_libraries(reefscan_server PRIVATE batch_queue)
 
+# Native C++ load client (measures the server, not a Python client).
+add_executable(reefscan_bench_client bench/bench_client.cpp)
+target_include_directories(reefscan_bench_client PRIVATE third_party)
+target_link_libraries(reefscan_bench_client PRIVATE Threads::Threads)
+
 # Phase 3: the fused preprocessing kernel + its correctness gate (needs the CUDA compiler).
 # Set an arch default + nvcc path so enable_language(CUDA) doesn't fail on arch auto-detect
 # (CMake 3.30 is strict). Ampere (80/86) + Ada (89) cover A100/A6000/A40/L4/A4000.
