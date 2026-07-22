@@ -121,18 +121,25 @@ def _write_md(csv_path: str, md_path: str) -> None:
            "Batch-1 and batched rows are separate (never conflated).", "",
            "| runtime | precision | device | batch | p50 ms | p95 ms | p99 ms | throughput img/s | peak mem MB | macro-F1 | acc |",
            "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
+    END2END = ("cpp-trt", "triton")  # server rows: end-to-end latency, batch col = client concurrency
     for r in rows:
         mem = num(r.get("peak_mem_mb"), 0) if r.get("peak_mem_mb") not in ("", "None", None) else "—"
-        rt = r["runtime"] + (" †" if r["runtime"] == "cpp-trt" else "")  # self-carrying caveat marker
+        rt = r["runtime"] + (" †" if r["runtime"] in END2END else "")  # self-carrying caveat marker
         out.append(f"| {rt} | {r['precision']} | {r.get('device','')} | {r['batch']} | {num(r['p50_ms'])} | "
                    f"{num(r['p95_ms'])} | {num(r['p99_ms'])} | {num(r['throughput_ips'], 1)} | {mem} | "
                    f"{num(r['macro_f1'], 4)} | {num(r['accuracy'], 4)} |")
-    if any(r["runtime"] == "cpp-trt" for r in rows):
+    if any(r["runtime"] in END2END for r in rows):
         out += ["",
-                "† **cpp-trt** = the hand-written C++ server (`edge/cpp_server/`), measured with the **native "
-                "C++ load client**. Latency is **end-to-end HTTP** (network + dynamic-batch queue + TensorRT) "
-                "and the `batch` column is **client concurrency** (the server batches internally), so these "
-                "rows aren't directly comparable to the in-process runtime rows above (e.g. tensorrt fp16's "
-                "2.24 ms is bare kernel time). It peaks **~1.3k req/s** and does **3.6 ms p50 @ concurrency-1** "
-                "(after a `TCP_NODELAY` fix that removed a ~40 ms Nagle stall). See `edge/cpp_server/DECISIONS.md`."]
+                "† **Server rows** (`cpp-trt`, `triton`) are measured **end-to-end** (network + dynamic-batch "
+                "queue + TensorRT), and their `batch` column is **client concurrency** (the server coalesces "
+                "batch-1 requests internally), so they are **not** directly comparable to the in-process "
+                "runtime rows above (e.g. `tensorrt fp16`'s 2.24 ms is bare kernel time). Both serve the **same "
+                "fp16 engine** on the same A6000, so their macro-F1 matches `tensorrt fp16` by construction — "
+                "the point of the comparison is the **serving stack**, not the model.",
+                "",
+                "- **cpp-trt** = the hand-written C++ server (`edge/cpp_server/`), native C++ load client. "
+                "Peaks **~1.3k req/s**, **3.6 ms p50 @ concurrency-1** (after a `TCP_NODELAY` fix that removed "
+                "a ~40 ms Nagle stall). See `edge/cpp_server/DECISIONS.md`.",
+                "- **triton** = stock NVIDIA Triton (`tensorrt_plan` backend, `dynamic_batching`), driven over "
+                "gRPC + validated with `perf_analyzer`. See `edge/serving/RUNPOD.md`."]
     open(md_path, "w").write("\n".join(out) + "\n")
