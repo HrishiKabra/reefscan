@@ -57,6 +57,7 @@ int main(int argc, char** argv) {
       pool.emplace_back([&, t] {
         httplib::Client cli(host, port);
         cli.set_keep_alive(true);
+        cli.set_tcp_nodelay(true);  // match the server: no Nagle stall on the request side
         cli.set_read_timeout(60, 0);
         int i;
         while ((i = next.fetch_add(1)) < reqs) {

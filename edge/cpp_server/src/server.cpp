@@ -34,6 +34,9 @@ int main() {
             << " max_delay_us=" << max_delay << " port=" << port << "\n";
 
   httplib::Server svr;
+  // Disable Nagle's algorithm: without it, the small logits response interacts with the client's
+  // delayed-ACK timer to add ~40 ms per request (a flat latency floor unrelated to compute).
+  svr.set_tcp_nodelay(true);
   svr.Get("/health", [](const httplib::Request&, httplib::Response& res) {
     res.set_content("ok", "text/plain");
   });
