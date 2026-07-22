@@ -55,6 +55,18 @@ a flag, so it never contaminates the fair fp32 benchmark.)
 - **F1 is a parity check, not a new result.** Same engine as `tensorrt fp16`, so macro-F1 must match it
   — a mismatch means a bug in the wire/queue path, not a finding.
 
+## B — a native client, and the ~40 ms Nagle stall it exposed
+The Python `bench_client.py` reported ~282 req/s and a flat ~48 ms p50 — I suspected the *client*, so
+I wrote a native C++ load client (`reefscan_bench_client`, keep-alive worker threads). It confirmed the
+throughput ceiling was client-side (1088 vs 359 req/s at conc-64) **but** the ~48 ms p50 persisted at
+concurrency-1 **for both clients** — which can't be client overhead. That flat, compute-independent
+~40 ms floor is the textbook **Nagle's-algorithm × delayed-ACK** interaction: the server's small logits
+response gets held by Nagle waiting for an ACK, and the peer's ~40 ms delayed-ACK timer fires before it
+sends one. Setting `TCP_NODELAY` on the server (and client) sockets fixed it: **p50 48 ms → 3.6 ms
+(13×) at concurrency-1, throughput → ~1.35k req/s**. Lesson recorded because it's the kind of latency
+floor that hides behind "it's probably the network" — a native client + reading the *shape* of the
+curve (flat regardless of load) is what surfaced it.
+
 ## Phase 3 — promoting the kernel
 - Same fused `uint8 HWC → fp32 NCHW → normalize` as `serving_B_cuda_kernel.ipynb`, now a real `.cu`
   translation unit compiled by nvcc under CMake, gated by an allclose-vs-multi-op-CPU-reference test

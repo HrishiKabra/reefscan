@@ -23,7 +23,7 @@ Batch-1 and batched rows are separate (never conflated).
 | tensorrt | fp16 | cuda | 32 | 34.69 | 35.78 | 36.23 | 923.6 | 380 | 0.8888 | 0.8965 |
 | tensorrt | int8 | cuda | 1 | 2.29 | 2.39 | 2.45 | 434.3 | 361 | 0.8840 | 0.8920 |
 | tensorrt | int8 | cuda | 32 | 35.40 | 36.69 | 37.14 | 903.5 | 380 | 0.8840 | 0.8920 |
-| cpp-trt † | fp16 | cuda | 1 | 47.97 | 51.95 | 52.23 | 20.8 | — | 0.8887 | 0.8965 |
-| cpp-trt † | fp16 | cuda | 32 | 81.91 | 232.96 | 332.72 | 282.4 | — | 0.8887 | 0.8965 |
+| cpp-trt † | fp16 | cuda | 1 | 3.61 | 4.16 | 4.81 | 274.5 | — | 0.8881 | 0.8958 |
+| cpp-trt † | fp16 | cuda | 32 | 26.08 | 31.47 | 33.20 | 1240.8 | — | 0.8881 | 0.8958 |
 
-† **cpp-trt** = the hand-written C++ server (`edge/cpp_server/`). Its latency is **end-to-end HTTP** (Python client → queue → TensorRT), and its `batch` column is **client concurrency**, not tensor batch size — so those rows are **not** latency-comparable to the in-process runtime rows above (e.g. tensorrt fp16's 2.24 ms is bare kernel time). They prove the C++ server matches the engine's macro-F1 and serves correctly; throughput there is client-bound. See `edge/cpp_server/DECISIONS.md`.
+† **cpp-trt** = the hand-written C++ server (`edge/cpp_server/`), measured with the **native C++ load client**. Latency is **end-to-end HTTP** (network + dynamic-batch queue + TensorRT) and the `batch` column is **client concurrency** (the server batches internally), so these rows aren't directly comparable to the in-process runtime rows above (e.g. tensorrt fp16's 2.24 ms is bare kernel time). It peaks **~1.3k req/s** and does **3.6 ms p50 @ concurrency-1** (after a `TCP_NODELAY` fix that removed a ~40 ms Nagle stall). See `edge/cpp_server/DECISIONS.md`.

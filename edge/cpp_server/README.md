@@ -25,11 +25,13 @@ Runs on a GPU + C++ toolchain box (the RunPod box from [`../serving/RUNPOD.md`](
   concurrency sweep. **F1 parity holds: 0.8887 vs the `tensorrt fp16` row's 0.8888** (same engine → a
   bug check, not a new number). Serving sweep 1→64: throughput peaks **~282 req/s @ conc 32** then
   saturates, p99 52→545 ms. `cpp-trt` rows are in `edge/results.csv` / `RESULTS.md`.
-  - *Honest read:* those latency columns are **end-to-end HTTP** (network + a **Python httpx** client +
-    the 1 ms batch window + TRT), so they're ~20× the in-process `tensorrt fp16` rows (2–37 ms) and the
-    throughput is client-bound, not server-bound — the async Python client can't drive the server hard.
-    A C++ client / `perf_analyzer` would push it far higher. The row proves **correctness + servability**
-    in the same table; it's not a like-for-like latency race with the raw-compute rows (see `DECISIONS.md`).
+  - **A native C++ load client (`reefscan_bench_client`) + a `TCP_NODELAY` fix took p50 from 48 ms → 3.6 ms
+    (13×) and throughput to ~1.35k req/s.** The Python `bench_client.py` had capped throughput
+    (client-bound: 359 vs 1088 req/s), but the *real* find was a flat ~40 ms latency floor at every
+    concurrency for **both** clients — a Nagle's-algorithm × delayed-ACK stall on the small response;
+    `set_tcp_nodelay(true)` removed it (see `DECISIONS.md`). The `cpp-trt` rows now reflect the native
+    client (3.6 ms p50 @ conc-1, 1.24k req/s @ conc-32) and still carry the honest caveat (end-to-end
+    HTTP, `batch` = concurrency, not a like-for-like race with the in-process rows).
 - **Phase 3 — promoted kernel** ✅ **GATE PASSED.** `kernels/preproc_kernel.cu` + `test_kernel`:
   `max|gpu − cpu ref| = 0.00e+00` vs the naive multi-op reference (< 1e-5 gate).
 - Phase 4 stretch (lock-free queue / CUDA graphs / pinned pool) — documented as measured-future-work

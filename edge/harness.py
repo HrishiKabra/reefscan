@@ -129,10 +129,10 @@ def _write_md(csv_path: str, md_path: str) -> None:
                    f"{num(r['macro_f1'], 4)} | {num(r['accuracy'], 4)} |")
     if any(r["runtime"] == "cpp-trt" for r in rows):
         out += ["",
-                "† **cpp-trt** = the hand-written C++ server (`edge/cpp_server/`). Its latency is **end-to-end "
-                "HTTP** (Python client → queue → TensorRT), and its `batch` column is **client concurrency**, "
-                "not tensor batch size — so those rows are **not** latency-comparable to the in-process "
-                "runtime rows above (e.g. tensorrt fp16's 2.24 ms is bare kernel time). They prove the C++ "
-                "server matches the engine's macro-F1 and serves correctly; throughput there is client-bound. "
-                "See `edge/cpp_server/DECISIONS.md`."]
+                "† **cpp-trt** = the hand-written C++ server (`edge/cpp_server/`), measured with the **native "
+                "C++ load client**. Latency is **end-to-end HTTP** (network + dynamic-batch queue + TensorRT) "
+                "and the `batch` column is **client concurrency** (the server batches internally), so these "
+                "rows aren't directly comparable to the in-process runtime rows above (e.g. tensorrt fp16's "
+                "2.24 ms is bare kernel time). It peaks **~1.3k req/s** and does **3.6 ms p50 @ concurrency-1** "
+                "(after a `TCP_NODELAY` fix that removed a ~40 ms Nagle stall). See `edge/cpp_server/DECISIONS.md`."]
     open(md_path, "w").write("\n".join(out) + "\n")
