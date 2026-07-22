@@ -27,6 +27,8 @@ Batch-1 and batched rows are separate (never conflated).
 | cpp-trt † | fp16 | cuda | 32 | 26.08 | 31.47 | 33.20 | 1240.8 | — | 0.8881 | 0.8958 |
 | triton † | fp16 | cuda | 1 | 5.01 | 5.49 | 5.82 | 199.4 | — | 0.8881 | 0.8958 |
 | triton † | fp16 | cuda | 32 | 21.14 | 27.16 | 31.01 | 1489.6 | — | 0.8881 | 0.8958 |
+| tensorrt ‡ | int8-qat | cuda | 1 | 1.66 | 1.70 | 1.86 | 592.5 | — | 0.8996 | 0.9061 |
+| tensorrt ‡ | int8-qat | cuda | 32 | 15.76 | 16.11 | 16.33 | 2021.8 | — | 0.8996 | 0.9061 |
 
 † **Server rows** (`cpp-trt`, `triton`) are measured **end-to-end with a native C++ load client**, and their `batch` column is **client concurrency** (the server coalesces batch-1 requests internally), so they are **not** directly comparable to the in-process runtime rows above (e.g. `tensorrt fp16`'s 2.24 ms is bare kernel time). Both serve the **same fp16 engine** on the same A6000, so their macro-F1 matches `tensorrt fp16` by construction — the comparison is about the **serving stack**, not the model.
 
@@ -34,3 +36,7 @@ Batch-1 and batched rows are separate (never conflated).
 - **triton** = stock NVIDIA Triton 2.51.0 (`tensorrt_plan` backend, `dynamic_batching` pref 8/16/32 @ 1 ms), measured with the official **`perf_analyzer`** (native C++ gRPC client). Full 1→64 curve: `edge/serving/docs/perf_analyzer.csv`; reproduce via `edge/serving/RUNPOD.md`.
 
 **Honest crossover:** the hand-written server **wins at concurrency-1** (3.6 vs 5.0 ms p50 — no gRPC framing, no forced queue-delay wait), while Triton **wins under load** (1490 vs 1240 img/s and *lower* p50 at concurrency-32) — its mature dynamic batcher amortizes better, and its curve keeps climbing to ~1.68k img/s at concurrency-64. perf_analyzer's server-side breakdown attributes the concurrency-1 gap to ~1.2 ms queue-delay + ~1.1 ms gRPC on top of the ~2.2 ms fp16 kernel.
+
+‡ **`int8-qat`** = Quantization-Aware Training via NVIDIA TensorRT Model Optimizer (`edge/run_qat.py`): fake-quant (Q/DQ) inserted into the trained DINOv2-B, fine-tuned 3 epochs, exported as a QDQ ONNX, built as a TRT int8 engine (explicit quantization — no calibrator). **Measured on A6000** (like the server rows), so its latency is **not** comparable to the L4 `tensorrt` rows above; its **macro-F1 0.8996 is** the fair cross-variant number (F1 is GPU-independent) — the **best of the whole ladder**.
+
+It closes the int8-collapse arc: naive ORT int8 **0.399** → modelopt PTQ (max-calibrated) **0.610** → TRT PTQ (entropy) **0.884** → **QAT 0.900**. On a same-GPU (A6000) panel (`edge/docs/qat_speed_a6000.json`), QAT int8 is **Pareto-dominant**: 1.66 ms / 2022 img/s vs fp16 1.88 ms / 1712 img/s and PTQ-int8 2.03 ms / 1744 img/s. PTQ int8 wins **no** speed over fp16 (TRT leaves the outlier-heavy layers in fp16); QAT's Q/DQ nodes commit every matmul to int8 tensor cores. Arc + per-epoch history: `edge/docs/qat_history.json`.

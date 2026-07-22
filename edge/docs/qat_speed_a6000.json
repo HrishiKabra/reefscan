@@ -1,0 +1,16 @@
+{
+  "note": "Same-GPU (A6000) comparison so the QAT speed claim is fair — the main results.csv tensorrt fp16/int8 rows are from the L4 ladder. Same 1,565-image test set. Latency = warmup + sync-bracketed (harness.py). All three serve the SAME trained DINOv2-B; F1 differs only by quantization/QAT.",
+  "gpu": "NVIDIA RTX A6000",
+  "trt": "10.5.0",
+  "variants": {
+    "tensorrt-fp16":     {"batch1": {"p50_ms": 1.88, "p95_ms": 1.97, "ips": 527.3},  "batch32": {"p50_ms": 18.62, "ips": 1712.0}, "macro_f1": 0.8887},
+    "tensorrt-int8-ptq": {"batch1": {"p50_ms": 2.03, "p95_ms": 2.07, "ips": 488.4},  "batch32": {"p50_ms": 18.31, "ips": 1744.4}, "macro_f1": 0.8887, "calibration": "IInt8EntropyCalibrator2"},
+    "tensorrt-int8-qat": {"batch1": {"p50_ms": 1.66, "p95_ms": 1.70, "ips": 592.5},  "batch32": {"p50_ms": 15.76, "ips": 2021.8}, "macro_f1": 0.8996, "method": "modelopt QAT (QDQ, 3 epochs @ lr 1e-5)"}
+  },
+  "findings": [
+    "QAT int8 is Pareto-dominant on A6000: fastest (1.66ms batch-1 / 2022 img/s batched) AND most accurate (0.8996).",
+    "PTQ int8 gets NO speed win over fp16 (2.03 vs 1.88ms batch-1; 1744 vs 1712 img/s) — TRT keeps the outlier-heavy layers in fp16, so few matmuls actually run int8.",
+    "QAT's explicit Q/DQ nodes let TRT commit every matmul to int8 tensor cores -> ~15-18% over fp16 batched (2022 vs 1712 img/s) and over PTQ int8 (2022 vs 1744).",
+    "Accuracy 0.8996 > fp16/PTQ 0.8887: QAT recovers the modelopt-PTQ collapse (0.610) AND the fine-tuning nudges the model above the fp checkpoint (0.8853). The rigorous claim: int8 no longer costs accuracy."
+  ]
+}

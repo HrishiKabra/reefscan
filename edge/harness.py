@@ -124,7 +124,8 @@ def _write_md(csv_path: str, md_path: str) -> None:
     END2END = ("cpp-trt", "triton")  # server rows: end-to-end latency, batch col = client concurrency
     for r in rows:
         mem = num(r.get("peak_mem_mb"), 0) if r.get("peak_mem_mb") not in ("", "None", None) else "—"
-        rt = r["runtime"] + (" †" if r["runtime"] in END2END else "")  # self-carrying caveat marker
+        mark = " †" if r["runtime"] in END2END else (" ‡" if r["precision"] == "int8-qat" else "")
+        rt = r["runtime"] + mark  # self-carrying caveat marker
         out.append(f"| {rt} | {r['precision']} | {r.get('device','')} | {r['batch']} | {num(r['p50_ms'])} | "
                    f"{num(r['p95_ms'])} | {num(r['p99_ms'])} | {num(r['throughput_ips'], 1)} | {mem} | "
                    f"{num(r['macro_f1'], 4)} | {num(r['accuracy'], 4)} |")
@@ -150,4 +151,19 @@ def _write_md(csv_path: str, md_path: str) -> None:
                 "keeps climbing to ~1.68k img/s at concurrency-64. perf_analyzer's server-side breakdown "
                 "attributes the concurrency-1 gap to ~1.2 ms queue-delay + ~1.1 ms gRPC on top of the ~2.2 ms "
                 "fp16 kernel."]
+    if any(r["precision"] == "int8-qat" for r in rows):
+        out += ["",
+                "‡ **`int8-qat`** = Quantization-Aware Training via NVIDIA TensorRT Model Optimizer "
+                "(`edge/run_qat.py`): fake-quant (Q/DQ) inserted into the trained DINOv2-B, fine-tuned 3 "
+                "epochs, exported as a QDQ ONNX, built as a TRT int8 engine (explicit quantization — no "
+                "calibrator). **Measured on A6000** (like the server rows), so its latency is **not** "
+                "comparable to the L4 `tensorrt` rows above; its **macro-F1 0.8996 is** the fair cross-variant "
+                "number (F1 is GPU-independent) — the **best of the whole ladder**.",
+                "",
+                "It closes the int8-collapse arc: naive ORT int8 **0.399** → modelopt PTQ (max-calibrated) "
+                "**0.610** → TRT PTQ (entropy) **0.884** → **QAT 0.900**. On a same-GPU (A6000) panel "
+                "(`edge/docs/qat_speed_a6000.json`), QAT int8 is **Pareto-dominant**: 1.66 ms / 2022 img/s vs "
+                "fp16 1.88 ms / 1712 img/s and PTQ-int8 2.03 ms / 1744 img/s. PTQ int8 wins **no** speed over "
+                "fp16 (TRT leaves the outlier-heavy layers in fp16); QAT's Q/DQ nodes commit every matmul to "
+                "int8 tensor cores. Arc + per-epoch history: `edge/docs/qat_history.json`."]
     open(md_path, "w").write("\n".join(out) + "\n")

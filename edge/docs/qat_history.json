@@ -1,0 +1,42 @@
+{
+  "epochs": 3,
+  "lr": 1e-05,
+  "bs": 64,
+  "calib_n": 512,
+  "baseline_fp_f1": 0.8853,
+  "modelopt_ptq_f1": 0.6102,
+  "qat_torch_f1": 0.8983,
+  "qat_engine_int8_f1": 0.8996,
+  "history": [
+    {
+      "stage": "baseline_fp",
+      "test_f1": 0.8853
+    },
+    {
+      "stage": "modelopt_ptq",
+      "test_f1": 0.6102
+    },
+    {
+      "stage": "qat_epoch_1",
+      "train_loss": 0.3376,
+      "val_f1": 0.8836,
+      "test_f1": 0.8952
+    },
+    {
+      "stage": "qat_epoch_2",
+      "train_loss": 0.2306,
+      "val_f1": 0.8855,
+      "test_f1": 0.8983
+    },
+    {
+      "stage": "qat_epoch_3",
+      "train_loss": 0.1789,
+      "val_f1": 0.8752,
+      "test_f1": 0.8897
+    },
+    {
+      "stage": "qat_engine_int8",
+      "test_f1": 0.8996
+    }
+  ]
+}
