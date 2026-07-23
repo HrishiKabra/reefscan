@@ -11,6 +11,7 @@
     "QAT int8 is Pareto-dominant on A6000: fastest (1.66ms batch-1 / 2022 img/s batched) AND most accurate (0.8996).",
     "PTQ int8 gets NO speed win over fp16 (2.03 vs 1.88ms batch-1; 1744 vs 1712 img/s) — TRT keeps the outlier-heavy layers in fp16, so few matmuls actually run int8.",
     "QAT's explicit Q/DQ nodes let TRT commit every matmul to int8 tensor cores -> ~15-18% over fp16 batched (2022 vs 1712 img/s) and over PTQ int8 (2022 vs 1744).",
-    "Accuracy 0.8996 > fp16/PTQ 0.8887: QAT recovers the modelopt-PTQ collapse (0.610) AND the fine-tuning nudges the model above the fp checkpoint (0.8853). The rigorous claim: int8 no longer costs accuracy."
+    "Accuracy 0.8996 > fp16/PTQ 0.8887: QAT recovers the modelopt-PTQ collapse (0.610) AND lands above the fp checkpoint (0.8853).",
+    "Control (run_ft_control.py): fine-tuning the fp model with the IDENTICAL 3-epoch recipe but no quantization reaches only 0.879 (overfits, below the 0.885 checkpoint) -> QAT's 0.900 is +0.020 over the control and is NOT just extra training; the fake-quant noise regularizes. Single-seed, so ~0.01-0.02 F1 carries variance; the robust claim is int8-QAT costs no accuracy and the gain isn't just epochs."
   ]
 }

@@ -1,0 +1,33 @@
+{
+  "epochs": 3,
+  "lr": 1e-05,
+  "bs": 64,
+  "baseline_fp_f1": 0.8853,
+  "ft_control_best_test_f1": 0.8794,
+  "qat_int8_f1": 0.8996,
+  "note": "best-val checkpoint, same protocol as run_qat.py",
+  "history": [
+    {
+      "stage": "baseline_fp",
+      "test_f1": 0.8853
+    },
+    {
+      "stage": "ft_epoch_1",
+      "train_loss": 0.3347,
+      "val_f1": 0.867,
+      "test_f1": 0.8794
+    },
+    {
+      "stage": "ft_epoch_2",
+      "train_loss": 0.1676,
+      "val_f1": 0.8612,
+      "test_f1": 0.8797
+    },
+    {
+      "stage": "ft_epoch_3",
+      "train_loss": 0.0949,
+      "val_f1": 0.8658,
+      "test_f1": 0.8805
+    }
+  ]
+}

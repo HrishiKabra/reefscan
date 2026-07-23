@@ -138,10 +138,19 @@ not — so I measured fp16 and PTQ-int8 on the **same A6000** for a fair panel:
 **QAT int8 is Pareto-dominant** — faster *and* more accurate than both fp16 and PTQ-int8. The mechanism
 is the interesting part: **PTQ int8 wins no speed over fp16** (TRT leaves the outlier-heavy layers in
 fp16, so few matmuls actually run int8), but **QAT's explicit Q/DQ nodes let TRT commit every matmul to
-int8 tensor cores** — ~15-18% faster. And the honest caveat, kept in: QAT is *also* extra fine-tuning,
-so part of the +0.011 F1 over the fp checkpoint (0.885) is training, not pure quantization — the
-rigorous claim is **"int8 no longer costs accuracy."** Panel + per-epoch history:
-[`docs/qat_speed_a6000.json`](docs/qat_speed_a6000.json), [`docs/qat_history.json`](docs/qat_history.json).
+int8 tensor cores** — ~15-18% faster.
+
+**I ran the control that a skeptic would ask for.** QAT is *also* 3 epochs of extra fine-tuning — so is
+the accuracy just from more training? [`run_ft_control.py`](run_ft_control.py) fine-tunes the fp model
+with the **identical** recipe and **no** quantization: it reaches only **0.879** — it *overfits*, landing
+*below* the 0.885 checkpoint. So QAT's **0.900 is +0.020 over the fp-finetuned control** and is **not**
+attributable to the extra epochs; the fake-quant noise acted as a regularizer. The honest bound: these
+are single-seed runs and ~0.01–0.02 F1 on an imbalanced 2-class set carries variance, so the robust
+claim is **"int8 costs no accuracy here, and the QAT gain is not just more training"** — not a
+universal "int8 beats fp16." Panel + history: [`docs/qat_speed_a6000.json`](docs/qat_speed_a6000.json),
+[`docs/qat_history.json`](docs/qat_history.json), [`docs/qat_control.json`](docs/qat_control.json).
+
+![QAT — accuracy vs latency (A6000) and the int8-collapse arc](docs/qat.png)
 
 ---
 
@@ -151,8 +160,9 @@ rigorous claim is **"int8 no longer costs accuracy."** Panel + per-epoch history
   on Ada, the C++ server *losing* to Triton under load, naive int8-quantizing DINOv2 regressing.
 - **Every win is traced to a cause:** TF32 vs fusion isolated by a control; the Nagle floor found by
   the curve's *shape*; QAT's speed win explained by Q/DQ committing matmuls to int8.
-- **I correct my own claims:** the TF32 mystery, the "SAM2 encoder is the bottleneck" reversal (v1),
-  and here the L4↔A6000 speed confound — measured away rather than glossed.
+- **I run the control a skeptic would ask for:** the TF32-vs-fusion isolation, the L4↔A6000 speed
+  confound measured away, and a no-quantization fine-tune that proved QAT's gain isn't just extra
+  epochs — each an experiment, not an assertion.
 - **Reproducibility is wired, not aspirational:** every GPU result is driven hands-off on RunPod
   (deploy → SSH → run → **terminate**), with the box (A6000), TRT version (10.5), and pins recorded in
   every result row and script. Self-carrying `†`/`‡` caveats travel with the table so a number can
@@ -176,8 +186,9 @@ rigorous claim is **"int8 no longer costs accuracy."** Panel + per-epoch history
   latency decomposition explaining why.
 - **Closed an int8-quantization negative with Quantization-Aware Training** (NVIDIA TensorRT Model
   Optimizer): recovered a ViT that collapsed under naive int8 (0.40 → **0.90 macro-F1**) and made int8
-  **Pareto-dominant on A6000 (1.66 ms / 2022 img/s, best accuracy of the ladder)** — after correcting a
-  cross-GPU speed confound with a same-hardware control.
+  **Pareto-dominant on A6000 (1.66 ms / 2022 img/s, best accuracy of the ladder)** — validated with two
+  controls: a same-GPU speed panel (killing an L4↔A6000 confound) and a no-quantization fine-tune that
+  **ruled out "just more training"** (it degraded to 0.879, so the +0.02 is regularization, not epochs).
 - **Automated the GPU experiment loop end-to-end** — RunPod REST driver (deploy → SSH → build/run →
   terminate) running C++/TensorRT/Triton/QAT jobs hands-off for cents per run, with self-documenting,
   reproducible result artifacts.
@@ -192,6 +203,7 @@ rigorous claim is **"int8 no longer costs accuracy."** Panel + per-epoch history
 | C++/TensorRT server | [`cpp_server/`](cpp_server/) — `cmake -B build && cmake --build build`; gates in `cpp_server/tools/` |
 | real Triton + perf_analyzer | [`serving/tools/run_triton_bench.sh`](serving/tools/run_triton_bench.sh) (hands-off RunPod A6000) |
 | QAT int8 | [`run_qat.py`](run_qat.py) on a GPU box with `nvidia-modelopt[torch]` + TensorRT |
+| QAT training control | [`run_ft_control.py`](run_ft_control.py) (fp fine-tune, no quant) → [`plot_qat.py`](plot_qat.py) → [`docs/qat.png`](docs/qat.png) |
 
 All GPU work runs in NGC containers (`nvcr.io/nvidia/pytorch:24.10-py3`,
 `nvcr.io/nvidia/tritonserver:24.10-py3`) on RunPod, driven by

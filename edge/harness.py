@@ -165,5 +165,14 @@ def _write_md(csv_path: str, md_path: str) -> None:
                 "(`edge/docs/qat_speed_a6000.json`), QAT int8 is **Pareto-dominant**: 1.66 ms / 2022 img/s vs "
                 "fp16 1.88 ms / 1712 img/s and PTQ-int8 2.03 ms / 1744 img/s. PTQ int8 wins **no** speed over "
                 "fp16 (TRT leaves the outlier-heavy layers in fp16); QAT's Q/DQ nodes commit every matmul to "
-                "int8 tensor cores. Arc + per-epoch history: `edge/docs/qat_history.json`."]
+                "int8 tensor cores.",
+                "",
+                "**Control (`edge/run_ft_control.py`):** to rule out \"the gain is just extra fine-tuning,\" "
+                "the fp model was fine-tuned with the **identical** 3-epoch recipe *without* quantization — it "
+                "reaches only **0.879** (it overfits at lr 1e-5, *below* the 0.885 checkpoint). So QAT's 0.900 "
+                "is **+0.020 over the fp-finetuned control** and is **not** attributable to extra training; the "
+                "fake-quant noise regularizes. (Single-seed; ~0.01–0.02 F1 on this imbalanced 2-class set "
+                "carries variance — the robust claim is that int8-QAT costs no accuracy and the gain isn't just "
+                "epochs.) Figure: `edge/docs/qat.png`; arc + history: `edge/docs/qat_history.json`, "
+                "`edge/docs/qat_control.json`."]
     open(md_path, "w").write("\n".join(out) + "\n")
